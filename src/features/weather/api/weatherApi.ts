@@ -10,6 +10,9 @@ import { DEFAULT_WEATHER_LOCATION_KEY, WEATHER_FORECAST_DAYS } from '@/features/
 const OPEN_METEO_FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast'
 const TOKYO_TIMEZONE = 'Asia/Tokyo'
 const GOLD_HUMIDITY_THRESHOLD = 65
+const GOLD_PRECIPITATION_PROBABILITY_THRESHOLD = 20
+const NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD = 30
+const WHITE_PRECIPITATION_PROBABILITY_THRESHOLD = 60
 const WHITE_HUMIDITY_THRESHOLD = 80
 const STRONG_WIND_THRESHOLD = 8
 
@@ -95,10 +98,12 @@ const getWeatherEmoji = (weatherCode: number) => {
 
 const buildLaundryJudgement = ({
   humidity,
+  precipitationProbability,
   weatherCode,
   windSpeed,
 }: {
   humidity: number
+  precipitationProbability: number
   weatherCode: number
   windSpeed: number
 }): LaundryJudgement => {
@@ -107,15 +112,23 @@ const buildLaundryJudgement = ({
 
   // 判定の最優先は「濡れるリスク」です。
   // 湿度が高い日や雨の日は、乾きにくい・再度濡れる可能性があるため部屋干し推奨にします。
-  if (humidity >= WHITE_HUMIDITY_THRESHOLD || isRainy) {
+  if (
+    humidity >= WHITE_HUMIDITY_THRESHOLD ||
+    precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD ||
+    isRainy
+  ) {
     return {
       level: 'white',
       description: '部屋干し推奨',
     }
   }
 
-  // 仕様で指定された「湿度65%未満かつ晴れ」を Gold 判定にします。
-  if (humidity < GOLD_HUMIDITY_THRESHOLD && isSunny) {
+  // 乾きやすさと雨リスクの両方を満たす場合のみ Gold 判定にします。
+  if (
+    humidity < GOLD_HUMIDITY_THRESHOLD &&
+    precipitationProbability < GOLD_PRECIPITATION_PROBABILITY_THRESHOLD &&
+    isSunny
+  ) {
     return {
       level: 'gold',
       description: '絶好の洗濯日和',
@@ -124,10 +137,13 @@ const buildLaundryJudgement = ({
 
   // 中間状態は「通常判定」として返し、外干し可否をユーザーが判断しやすくします。
   // 風速が強い日は飛散・型崩れリスクがあるため、補足メッセージを分けています。
-  if (windSpeed >= STRONG_WIND_THRESHOLD) {
+  if (
+    windSpeed >= STRONG_WIND_THRESHOLD ||
+    precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
+  ) {
     return {
       level: 'normal',
-      description: '外干し注意（風強め）',
+      description: '外干し注意',
     }
   }
 
@@ -161,6 +177,7 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
   return Array.from({ length: dailyLength }, (_, index) => {
     const weatherCode = daily.weather_code[index]
     const humidity = daily.relative_humidity_2m_mean[index]
+    const precipitationProbability = daily.precipitation_probability_max[index]
     const windSpeed = daily.wind_speed_10m_max[index]
 
     return {
@@ -175,7 +192,7 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
       precipitationProbability: Math.round(daily.precipitation_probability_max[index]),
       windSpeed: Math.round(windSpeed),
       humidity: Math.round(humidity),
-      laundry: buildLaundryJudgement({ humidity, weatherCode, windSpeed }),
+      laundry: buildLaundryJudgement({ humidity, precipitationProbability, weatherCode, windSpeed }),
     }
   })
 }
