@@ -149,6 +149,7 @@ const toDateLabel = (date: string) => {
 const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): WeatherForecastDay[] => {
   const dailyLength = Math.min(
     daily.time.length,
+    daily.precipitation_probability_max.length,
     daily.temperature_2m_max.length,
     daily.temperature_2m_min.length,
     daily.weather_code.length,
@@ -171,6 +172,7 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
       weatherLabel: getWeatherLabel(weatherCode),
       maxTemperature: Math.round(daily.temperature_2m_max[index]),
       minTemperature: Math.round(daily.temperature_2m_min[index]),
+      precipitationProbability: Math.round(daily.precipitation_probability_max[index]),
       windSpeed: Math.round(windSpeed),
       humidity: Math.round(humidity),
       laundry: buildLaundryJudgement({ humidity, weatherCode, windSpeed }),
@@ -193,7 +195,7 @@ export const fetchWeeklyWeather = async (
     timezone: TOKYO_TIMEZONE,
     forecast_days: String(WEATHER_FORECAST_DAYS),
     daily:
-      'temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,relative_humidity_2m_mean',
+      'temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,relative_humidity_2m_mean,precipitation_probability_max',
   })
 
   const response = await fetch(`${OPEN_METEO_FORECAST_ENDPOINT}?${searchParams.toString()}`)

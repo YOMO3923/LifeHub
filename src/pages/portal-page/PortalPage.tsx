@@ -166,6 +166,7 @@ export const PortalPage = () => {
                       {weatherDay.maxTemperature}° / {weatherDay.minTemperature}°
                     </p>
                     <p className="mt-1 text-[10px] text-white/80">湿度 {weatherDay.humidity}% / 風速 {weatherDay.windSpeed}m/s</p>
+                    <p className="mt-0.5 text-[10px] text-white/80">降水確率 {weatherDay.precipitationProbability}%</p>
 
                     <div className="mt-1.5 flex items-center justify-center gap-1.5">
                       <div className="relative inline-flex h-6 w-6 items-center justify-center">

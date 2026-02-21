@@ -24,6 +24,7 @@ export type WeatherForecastDay = {
   laundry: LaundryJudgement
   maxTemperature: number
   minTemperature: number
+  precipitationProbability: number
   weatherCode: number
   weatherEmoji: string
   weatherLabel: string
@@ -32,6 +33,7 @@ export type WeatherForecastDay = {
 
 export type OpenMeteoDailyResponse = {
   time: string[]
+  precipitation_probability_max: number[]
   temperature_2m_max: number[]
   temperature_2m_min: number[]
   weather_code: number[]
