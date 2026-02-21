@@ -23,6 +23,8 @@ export const FeaturePlaceholderPage = ({ cardIcon: CardIcon, title, description 
           }
         />
 
+        <p className="-mt-2 text-center text-lg font-medium tracking-[0.35em] text-navy/80 uppercase sm:text-xl">{title}</p>
+
         {/* このセクションは「今後ここに機能を実装する」というプレースホルダー領域です。 */}
         <section className="rounded-3xl border-[0.5px] border-gold bg-navy/80 p-8 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 sm:p-10">
           <div className="flex items-center justify-center gap-2 text-center">

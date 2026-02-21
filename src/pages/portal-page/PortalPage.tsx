@@ -109,7 +109,7 @@ export const PortalPage = () => {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-left">
               <CloudSun className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
-              <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Sky Briefing</h2>
+              <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Weather</h2>
             </div>
 
             {/* ラベル文字を省略し、タイトル行の右端にプルダウンだけを配置します。 */}

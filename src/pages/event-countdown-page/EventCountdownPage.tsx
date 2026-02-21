@@ -17,6 +17,10 @@ export const EventCountdownPage = () => {
           }
         />
 
+        <p className="-mt-2 text-center text-lg font-medium tracking-[0.35em] text-navy/80 uppercase sm:text-xl">
+          Event Countdown
+        </p>
+
         <EventCountdownPanel />
       </div>
     </main>
