@@ -110,7 +110,7 @@ const buildLaundryJudgement = ({
   if (humidity >= WHITE_HUMIDITY_THRESHOLD || isRainy) {
     return {
       level: 'white',
-      description: '部屋干し推奨（White）',
+      description: '部屋干し推奨',
     }
   }
 
@@ -118,7 +118,7 @@ const buildLaundryJudgement = ({
   if (humidity < GOLD_HUMIDITY_THRESHOLD && isSunny) {
     return {
       level: 'gold',
-      description: '絶好の洗濯日和（Gold）',
+      description: '絶好の洗濯日和',
     }
   }
 
