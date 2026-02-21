@@ -1,7 +1,8 @@
-import { BookOpenText, Check, CheckCheck, ClipboardList, CloudSun, Plane, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
+import { BookOpenText, CalendarClock, Check, CheckCheck, ClipboardList, CloudSun, Plane, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
+import { useEventCountdown } from '@/features/event-countdown'
 import type { LaundryLevel, WeatherLocationKey } from '@/features/weather'
 import { WEATHER_LOCATION_OPTIONS, useWeather } from '@/features/weather'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,11 @@ const PORTAL_FEATURES: PortalFeature[] = [
     icon: UtensilsCrossed,
     to: '/cooking-support',
   },
+  {
+    title: 'Event Countdown',
+    icon: CalendarClock,
+    to: '/event-countdown',
+  },
 ]
 
 const LAUNDRY_ICON_COMPONENT_BY_LEVEL: Record<LaundryLevel, React.ComponentType<{ className?: string }>> = {
@@ -49,6 +55,7 @@ const LAUNDRY_TEXT_CLASS_BY_LEVEL = {
 
 export const PortalPage = () => {
   const { weatherDays, isLoading, errorMessage, selectedLocation, handleChangeLocation, retryLoadWeather } = useWeather()
+  const { highlightedEvent } = useEventCountdown()
 
   const handleLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     handleChangeLocation(event.target.value as WeatherLocationKey)
@@ -72,6 +79,29 @@ export const PortalPage = () => {
 
           <p className="text-center text-lg font-medium tracking-[0.35em] text-navy/80 sm:text-xl">PORTAL</p>
         </div>
+
+        <Link
+          to="/event-countdown"
+          className="block rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 transition hover:brightness-110 sm:p-6"
+          aria-label="イベントカウントダウンページへ移動"
+        >
+          <div className="flex items-center justify-center gap-2 text-center">
+            <Sparkles className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
+            <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
+          </div>
+
+          <div className="mt-3 rounded-2xl border-[0.5px] border-gold/45 bg-charcoal/40 px-4 py-4 text-center">
+            {!highlightedEvent && (
+              <p className="text-sm text-gold/90">楽しみなイベントを登録すると、ここに残り日数を表示します。</p>
+            )}
+
+            {highlightedEvent && (
+              <p className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
+                {highlightedEvent.title} まであと{highlightedEvent.daysUntil}日！
+              </p>
+            )}
+          </div>
+        </Link>
 
         <section className="rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 sm:p-6">
           <div className="flex items-center justify-between gap-2">
@@ -151,7 +181,7 @@ export const PortalPage = () => {
         </section>
 
         {/* map でカードを描画すると、今後機能が増えても配列を1件追加するだけでUIを拡張できます。 */}
-        <section className="grid grid-cols-2 gap-3 sm:gap-4">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
           {PORTAL_FEATURES.map((feature, featureIndex) => (
             <Link
               key={feature.title}

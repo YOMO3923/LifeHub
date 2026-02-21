@@ -12,7 +12,7 @@ type AppHeaderProps = {
   titleClassName?: string
 }
 
-const DEFAULT_BACK_LABEL = 'ポータルに戻る'
+const DEFAULT_BACK_LABEL = 'ポータル'
 const DEFAULT_BACK_TO = '/'
 
 export const AppHeader = ({

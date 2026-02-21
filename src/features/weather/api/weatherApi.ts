@@ -9,7 +9,7 @@ import { DEFAULT_WEATHER_LOCATION_KEY, WEATHER_FORECAST_DAYS } from '@/features/
 
 const OPEN_METEO_FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast'
 const TOKYO_TIMEZONE = 'Asia/Tokyo'
-const GOLD_HUMIDITY_THRESHOLD = 60
+const GOLD_HUMIDITY_THRESHOLD = 65
 const WHITE_HUMIDITY_THRESHOLD = 80
 const STRONG_WIND_THRESHOLD = 8
 
@@ -114,7 +114,7 @@ const buildLaundryJudgement = ({
     }
   }
 
-  // 仕様で指定された「湿度60%未満かつ晴れ」を Gold 判定にします。
+  // 仕様で指定された「湿度65%未満かつ晴れ」を Gold 判定にします。
   if (humidity < GOLD_HUMIDITY_THRESHOLD && isSunny) {
     return {
       level: 'gold',

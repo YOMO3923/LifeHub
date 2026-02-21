@@ -1,0 +1,20 @@
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+
+export const ScrollToTopOnRouteChange = () => {
+  const { pathname, search } = useLocation()
+
+  useEffect(() => {
+    if (window.history.scrollRestoration) {
+      window.history.scrollRestoration = 'manual'
+    }
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto',
+    })
+  }, [pathname, search])
+
+  return null
+}

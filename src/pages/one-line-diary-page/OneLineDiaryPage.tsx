@@ -1,3 +1,4 @@
+import { BookOpenText } from 'lucide-react'
 import { FeaturePlaceholderPage } from '@/components/common/FeaturePlaceholderPage'
 
 // この定数は「今は準備中であること」をユーザーへ明確に伝えるための文言です。
@@ -6,5 +7,5 @@ const DESCRIPTION =
 
 export const OneLineDiaryPage = () => {
   // 共通プレースホルダーを再利用することで、ページごとのデザイン差分を最小化し保守しやすくします。
-  return <FeaturePlaceholderPage title="One-Line Diary" description={DESCRIPTION} />
+  return <FeaturePlaceholderPage title="One-Line Diary" description={DESCRIPTION} cardIcon={BookOpenText} />
 }
