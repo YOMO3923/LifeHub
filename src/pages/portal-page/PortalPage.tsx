@@ -1,8 +1,8 @@
-import { BookOpenText, ClipboardList, CloudSun, Plane, Shirt, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { BookOpenText, Check, CheckCheck, ClipboardList, CloudSun, Plane, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
-import type { WeatherLocationKey } from '@/features/weather'
+import type { LaundryLevel, WeatherLocationKey } from '@/features/weather'
 import { WEATHER_LOCATION_OPTIONS, useWeather } from '@/features/weather'
 import { cn } from '@/lib/utils'
 
@@ -35,11 +35,11 @@ const PORTAL_FEATURES: PortalFeature[] = [
   },
 ]
 
-const LAUNDRY_ICON_BY_LEVEL = {
-  gold: '◎',
-  normal: '○',
-  white: '×',
-} as const
+const LAUNDRY_ICON_COMPONENT_BY_LEVEL: Record<LaundryLevel, React.ComponentType<{ className?: string }>> = {
+  gold: CheckCheck,
+  normal: Check,
+  white: X,
+}
 
 const LAUNDRY_TEXT_CLASS_BY_LEVEL = {
   gold: 'text-gold',
@@ -83,7 +83,7 @@ export const PortalPage = () => {
             {/* ラベル文字を省略し、タイトル行の右端にプルダウンだけを配置します。 */}
             <select
               aria-label="天気の地点選択"
-              className="max-w-[96px] rounded-md border border-gold/70 bg-charcoal/60 px-2 py-1 text-xs text-white outline-none focus:border-gold sm:max-w-none sm:text-sm"
+              className="max-w-[104px] rounded-md border border-gold/70 bg-charcoal/60 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold sm:max-w-none sm:text-sm"
               value={selectedLocation}
               onChange={handleLocationChange}
             >
@@ -115,36 +115,38 @@ export const PortalPage = () => {
             )}
 
             {!isLoading && !errorMessage &&
-              weatherDays.map((weatherDay, weatherIndex) => (
-                <article
-                  key={weatherDay.date}
-                  className={cn(
-                    'flex min-h-[136px] min-w-[122px] flex-shrink-0 flex-col rounded-2xl border-[0.5px] bg-charcoal/50 p-2.5 text-center animate-in fade-in-0 zoom-in-95 duration-500',
-                    weatherDay.isToday ? 'border-gold' : 'border-gold/35'
-                  )}
-                  style={{ animationDelay: `${weatherIndex * 70}ms` }}
-                >
-                  <p className={cn('text-xs', weatherDay.isToday ? 'text-gold' : 'text-gold/85')}>{weatherDay.dateLabel}</p>
-                  <p className="mt-1 text-xl text-white">{weatherDay.weatherEmoji}</p>
-                  <p className="text-[11px] text-white/90">{weatherDay.weatherLabel}</p>
-                  <p className="mt-1.5 text-xs text-gold/90">
-                    {weatherDay.maxTemperature}° / {weatherDay.minTemperature}°
-                  </p>
-                  <p className="mt-1 text-[10px] text-white/80">湿度 {weatherDay.humidity}% / 風速 {weatherDay.windSpeed}m/s</p>
+              weatherDays.map((weatherDay, weatherIndex) => {
+                const LaundryStatusIcon = LAUNDRY_ICON_COMPONENT_BY_LEVEL[weatherDay.laundry.level]
 
-                  <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                    <div className="relative inline-flex h-6 w-6 items-center justify-center">
-                      <Shirt className="h-4 w-4 text-gold" />
-                      <span className="absolute -right-1 -top-1 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-navy px-0.5 text-[9px] font-semibold leading-none text-gold">
-                        {LAUNDRY_ICON_BY_LEVEL[weatherDay.laundry.level]}
-                      </span>
-                    </div>
-                    <p className={cn('text-[10px] font-medium', LAUNDRY_TEXT_CLASS_BY_LEVEL[weatherDay.laundry.level])}>
-                      {weatherDay.laundry.description}
+                return (
+                  <article
+                    key={weatherDay.date}
+                    className={cn(
+                      'flex min-h-[136px] min-w-[122px] flex-shrink-0 flex-col rounded-2xl border-[0.5px] bg-charcoal/50 p-2.5 text-center animate-in fade-in-0 zoom-in-95 duration-500',
+                      weatherDay.isToday ? 'border-gold' : 'border-gold/35'
+                    )}
+                    style={{ animationDelay: `${weatherIndex * 70}ms` }}
+                  >
+                    <p className={cn('text-xs', weatherDay.isToday ? 'text-gold' : 'text-gold/85')}>{weatherDay.dateLabel}</p>
+                    <p className="mt-1 text-xl text-white">{weatherDay.weatherEmoji}</p>
+                    <p className="text-[11px] text-white/90">{weatherDay.weatherLabel}</p>
+                    <p className="mt-1.5 text-xs text-gold/90">
+                      {weatherDay.maxTemperature}° / {weatherDay.minTemperature}°
                     </p>
-                  </div>
-                </article>
-              ))}
+                    <p className="mt-1 text-[10px] text-white/80">湿度 {weatherDay.humidity}% / 風速 {weatherDay.windSpeed}m/s</p>
+
+                    <div className="mt-1.5 flex items-center justify-center gap-1.5">
+                      <div className="relative inline-flex h-6 w-6 items-center justify-center">
+                        <Shirt className="h-4 w-4 text-gold" />
+                        <LaundryStatusIcon className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-navy text-gold" />
+                      </div>
+                      <p className={cn('text-[10px] font-medium', LAUNDRY_TEXT_CLASS_BY_LEVEL[weatherDay.laundry.level])}>
+                        {weatherDay.laundry.description}
+                      </p>
+                    </div>
+                  </article>
+                )
+              })}
           </div>
         </section>
 
