@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, createHashRouter } from 'react-router-dom'
 import { CookingSupportPage } from '@/pages/cooking-support-page/CookingSupportPage'
 import { EventCountdownPage } from '@/pages/event-countdown-page/EventCountdownPage'
 import { HouseworkTaskPage } from '@/pages/housework-task-page/HouseworkTaskPage'
@@ -9,7 +9,9 @@ import { PreTravelPage } from '@/pages/pre-travel-page/PreTravelPage'
 import { RootRouteLayout } from '@/routes/RootRouteLayout'
 
 // ルーティング定義を routes 配下へ分離し、main.tsx からは App だけを読む構成にします。
-export const appRouter = createBrowserRouter(
+const createRouter = import.meta.env.PROD ? createHashRouter : createBrowserRouter
+
+export const appRouter = createRouter(
   [
     {
       path: '/',
