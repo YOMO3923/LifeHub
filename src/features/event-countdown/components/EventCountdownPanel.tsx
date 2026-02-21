@@ -64,7 +64,7 @@ const getEventIconComponent = (iconKey: EventIconKey) => {
 
 const getCountdownLabel = (eventItem: UpcomingEventCountdownItem) => {
   if (eventItem.daysUntil === 0) {
-    return `${eventItem.title} は今日です！`
+    return `${eventItem.title} 当日！！`
   }
 
   return `${eventItem.title} まであと${eventItem.daysUntil}日！`
@@ -198,7 +198,9 @@ export const EventCountdownPanel = () => {
               <HighlightedIcon className="h-7 w-7 text-gold" />
             </span>
             <p className="text-xs text-gold/90">次に楽しみなイベント</p>
-            <p className="text-2xl font-semibold tracking-[0.02em] text-white sm:text-3xl">{highlightedEvent.title}</p>
+            {highlightedEvent.daysUntil !== 0 && (
+              <p className="text-2xl font-semibold tracking-[0.02em] text-white sm:text-3xl">{highlightedEvent.title}</p>
+            )}
             <p className="text-xs text-white/80">{formatEventDate(highlightedEvent.date)}</p>
             <p className="text-base font-semibold text-gold sm:text-lg">{getCountdownLabel(highlightedEvent)}</p>
           </div>
@@ -303,7 +305,9 @@ export const EventCountdownPanel = () => {
                   </div>
                 </div>
 
-                <p className="text-xs font-semibold text-gold">あと{eventItem.daysUntil}日</p>
+                <p className="text-xs font-semibold text-gold">
+                  {eventItem.daysUntil === 0 ? '当日！！' : `あと${eventItem.daysUntil}日`}
+                </p>
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">

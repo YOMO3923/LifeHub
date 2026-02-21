@@ -97,7 +97,9 @@ export const PortalPage = () => {
 
             {highlightedEvent && (
               <p className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
-                {highlightedEvent.title} まであと{highlightedEvent.daysUntil}日！
+                {highlightedEvent.daysUntil === 0
+                  ? `${highlightedEvent.title} 当日！！`
+                  : `${highlightedEvent.title} まであと${highlightedEvent.daysUntil}日！`}
               </p>
             )}
           </div>

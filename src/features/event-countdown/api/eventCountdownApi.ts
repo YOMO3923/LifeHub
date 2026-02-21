@@ -2,6 +2,11 @@ import type { EventCountdownItem, EventCountdownItemInput, EventIconKey } from '
 
 const EVENT_COUNTDOWN_STORAGE_KEY = 'lifehub:event-countdown-items'
 
+const getTodayDateString = () => {
+  // 日付入力のフォーマット (YYYY-MM-DD) に合わせて本日文字列を生成します。
+  return new Date().toISOString().slice(0, 10)
+}
+
 const isEventIconKey = (value: string): value is EventIconKey => {
   return value === 'sparkles' || value === 'fireworks' || value === 'gift' || value === 'plane' || value === 'music'
 }
@@ -52,8 +57,15 @@ const writeStoredItems = (items: EventCountdownItem[]) => {
 // 将来DB連携へ置き換えるため、あえてAPI関数として切り出しています。
 export const fetchEventCountdownItems = async (): Promise<EventCountdownItem[]> => {
   const storedItems = readStoredItems()
+  const todayDateString = getTodayDateString()
+  const validItems = storedItems.filter((item) => item.date >= todayDateString)
 
-  return storedItems.sort((firstItem, secondItem) => firstItem.date.localeCompare(secondItem.date))
+  if (validItems.length !== storedItems.length) {
+    // 期限切れイベントを自動削除し、次回表示時に古いデータが残らないようにします。
+    writeStoredItems(validItems)
+  }
+
+  return validItems.sort((firstItem, secondItem) => firstItem.date.localeCompare(secondItem.date))
 }
 
 export const createEventCountdownItem = async (
