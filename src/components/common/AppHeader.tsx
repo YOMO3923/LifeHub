@@ -6,6 +6,7 @@ type AppHeaderProps = {
   title: string
   canGoBack?: boolean
   backLabel?: string
+  backReplace?: boolean
   backTo?: string
   centerIcon?: ReactNode
   titleClassName?: string
@@ -18,6 +19,7 @@ export const AppHeader = ({
   title,
   canGoBack = false,
   backLabel = DEFAULT_BACK_LABEL,
+  backReplace = true,
   backTo = DEFAULT_BACK_TO,
   centerIcon,
   titleClassName,
@@ -30,6 +32,7 @@ export const AppHeader = ({
         {canGoBack ? (
           <Link
             to={backTo}
+            replace={backReplace}
             aria-label={backLabel}
             // h/w を同値にした丸ボタンはタップ領域を確保しつつ、モバイルでも見た目を崩しにくいです。
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gold text-navy transition hover:brightness-110"
