@@ -15,6 +15,11 @@ const config = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        // LifeHub 専用トークン。色名で意味を持たせると、画面ごとの再利用時に迷いにくくなります。
+        pearl: '#F8F9FA',
+        navy: '#1B263B',
+        gold: '#E0C397',
+        charcoal: '#2C3E50',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
@@ -53,6 +58,10 @@ const config = {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+      },
+      backgroundImage: {
+        // クラス名1つで再利用できるグラデーションを定義し、TSX側の記述を短く保ちます。
+        'navy-gradient': 'linear-gradient(to bottom right, #1B263B, #2C3E50)',
       },
     },
   },

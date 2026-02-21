@@ -17,6 +17,18 @@
 
 開発時は [.github/instructions/template.instructions.md](.github/instructions/template.instructions.md) を参照してください。
 
+## 天気・洗濯コンシェルジュ仕様
+
+- 使用API: Open-Meteo (`https://open-meteo.com/`)
+- 対象地点: 千葉（デフォルト）/ 東京（画面の地点セレクタで切替）
+- 取得日数: 7日間
+- 取得項目: `最高/最低気温`, `天気コード`, `最大風速`, `相対湿度`
+- キャッシュ: 地点ごとに1時間 `localStorage` キャッシュ（1時間以内はAPI未呼び出し）
+- 判定ロジック:
+	- `湿度60%未満` かつ `晴れ` → `絶好の洗濯日和（Gold）`
+	- `湿度80%以上` または `雨` → `部屋干し推奨（White）`
+	- それ以外 → 中間判定（外干しは様子見）
+
 ## src 構成
 
 ```text
@@ -33,7 +45,7 @@ src/
 			types/
 			index.ts
 	pages/
-		home-page/
+		portal-page/
 		not-found/
 	routes/
 		AppRouter.tsx

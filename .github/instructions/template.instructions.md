@@ -102,8 +102,6 @@ Provide project context and coding guidelines that AI should follow when generat
 # コメント方針の補足
 
 - コメントは「何をしているか」より「なぜ必要か」を優先して記述してください。
-- コードを読めば明らかな内容の冗長コメントは避けてください。
-- 初学者向けの説明が必要な箇所のみ、簡潔な日本語コメントを付与してください。
 
 # 指示への一貫性
 
