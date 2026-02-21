@@ -13,7 +13,6 @@ const GOLD_HUMIDITY_THRESHOLD = 65
 const GOLD_PRECIPITATION_PROBABILITY_THRESHOLD = 20
 const NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD = 30
 const WHITE_PRECIPITATION_PROBABILITY_THRESHOLD = 60
-const WHITE_HUMIDITY_THRESHOLD = 80
 const STRONG_WIND_THRESHOLD = 8
 
 const WEATHER_LOCATION_MAP: Record<WeatherLocationKey, { label: string; latitude: number; longitude: number }> = {
@@ -111,15 +110,11 @@ const buildLaundryJudgement = ({
   const isRainy = RAINY_WEATHER_CODES.has(weatherCode)
 
   // 判定の最優先は「濡れるリスク」です。
-  // 湿度が高い日や雨の日は、乾きにくい・再度濡れる可能性があるため部屋干し推奨にします。
-  if (
-    humidity >= WHITE_HUMIDITY_THRESHOLD ||
-    precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD ||
-    isRainy
-  ) {
+  // 雨が想定される日は、外干しで再度濡れる可能性があるため洗濯非推奨にします。
+  if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD || isRainy) {
     return {
       level: 'white',
-      description: '部屋干し推奨',
+      description: '洗濯非推奨',
     }
   }
 
@@ -137,19 +132,33 @@ const buildLaundryJudgement = ({
 
   // 中間状態は「通常判定」として返し、外干し可否をユーザーが判断しやすくします。
   // 風速が強い日は飛散・型崩れリスクがあるため、補足メッセージを分けています。
-  if (
-    windSpeed >= STRONG_WIND_THRESHOLD ||
-    precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
-  ) {
+  const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
+  const isPrecipitationCaution = precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
+
+  if (isWindCaution && isPrecipitationCaution) {
+    return {
+      level: 'white',
+      description: '洗濯非推奨（風・雨に注意）',
+    }
+  }
+
+  if (isWindCaution) {
     return {
       level: 'normal',
-      description: '外干し注意',
+      description: '外干しOK（風に注意）',
+    }
+  }
+
+  if (isPrecipitationCaution) {
+    return {
+      level: 'white',
+      description: '洗濯非推奨（雨に注意）',
     }
   }
 
   return {
     level: 'normal',
-    description: '外干しは様子見',
+    description: '外干しOK',
   }
 }
 
