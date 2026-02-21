@@ -210,7 +210,7 @@ export const EventCountdownPanel = () => {
         <label className="grid gap-1.5">
           <span className="text-xs text-gold/90">イベント名</span>
           <input
-            className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-sm text-white outline-none placeholder:text-white/50 focus:border-gold"
+            className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-base text-white outline-none placeholder:text-white/50 focus:border-gold sm:text-sm"
             type="text"
             placeholder="例: 北海道旅行"
             value={draft.title}
@@ -222,7 +222,7 @@ export const EventCountdownPanel = () => {
           <label className="grid gap-1.5">
             <span className="text-xs text-gold/90">日程</span>
             <input
-              className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-sm text-white outline-none focus:border-gold"
+              className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-base text-white outline-none focus:border-gold sm:text-sm"
               type="date"
               value={draft.date}
               onChange={(event) => handleChangeDraft('date', event.target.value)}
@@ -232,7 +232,7 @@ export const EventCountdownPanel = () => {
           <label className="grid gap-1.5">
             <span className="text-xs text-gold/90">アイコン</span>
             <select
-              className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-sm text-white outline-none focus:border-gold"
+              className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-base text-white outline-none focus:border-gold sm:text-sm"
               value={draft.iconKey}
               onChange={(event) => handleChangeDraft('iconKey', event.target.value)}
             >
