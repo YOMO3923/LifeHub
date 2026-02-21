@@ -82,7 +82,7 @@ export const PortalPage = () => {
 
         <Link
           to="/event-countdown"
-          className="block rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 transition hover:brightness-110 sm:p-6"
+          className="block touch-manipulation select-none rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 transition hover:brightness-110 [-webkit-touch-callout:none] sm:p-6"
           aria-label="イベントカウントダウンページへ移動"
         >
           <div className="flex items-center justify-center gap-2 text-center">
@@ -189,7 +189,7 @@ export const PortalPage = () => {
             <Link
               key={feature.title}
               to={feature.to}
-              className="group flex min-h-[120px] flex-col items-center justify-center gap-3 rounded-3xl border-[0.5px] border-gold bg-navy/80 p-4 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 transition duration-300 hover:scale-105 hover:brightness-110 sm:p-5"
+              className="group flex min-h-[120px] touch-manipulation select-none flex-col items-center justify-center gap-3 rounded-3xl border-[0.5px] border-gold bg-navy/80 p-4 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 transition duration-300 hover:scale-105 hover:brightness-110 [-webkit-touch-callout:none] sm:p-5"
               style={{ animationDelay: `${featureIndex * 90}ms` }}
             >
               <feature.icon className="h-7 w-7 text-gold sm:h-8 sm:w-8" />
