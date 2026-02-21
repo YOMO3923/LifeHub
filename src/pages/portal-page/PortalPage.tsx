@@ -189,11 +189,33 @@ export const PortalPage = () => {
             <Link
               key={feature.title}
               to={feature.to}
-              className="group flex min-h-[120px] touch-manipulation select-none flex-col items-center justify-center gap-3 rounded-3xl border-[0.5px] border-gold bg-navy/80 p-4 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 transition duration-300 hover:scale-105 hover:brightness-110 [-webkit-touch-callout:none] sm:p-5"
+              className="group relative min-h-[132px] touch-manipulation select-none overflow-hidden rounded-2xl border-[0.5px] border-gold bg-pearl/95 p-4 text-charcoal shadow-[0_8px_24px_rgba(27,38,59,0.15)] backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 transition duration-300 hover:scale-[1.02] hover:brightness-105 active:[transform:perspective(900px)_rotateY(-8deg)_scale(0.98)] [-webkit-touch-callout:none] sm:p-5"
               style={{ animationDelay: `${featureIndex * 90}ms` }}
             >
-              <feature.icon className="h-7 w-7 text-gold sm:h-8 sm:w-8" />
-              <h2 className="text-center text-sm font-semibold text-white sm:text-xl">{feature.title}</h2>
+              {/* 背景模様: 目次ノートの罫線・マージン線・綴じ穴を抽象化し、生活ログの蓄積感を表現します。 */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute left-6 top-3 h-[calc(100%-24px)] w-px bg-gold/40" />
+                <div className="absolute inset-x-3 top-8 h-px bg-gold/30" />
+                <div className="absolute inset-x-3 top-[52px] h-px bg-gold/20" />
+                <div className="absolute inset-x-3 top-[76px] h-px bg-gold/20" />
+                <div className="absolute inset-x-3 top-[100px] h-px bg-gold/20" />
+
+                <div className="absolute left-1.5 top-7 h-2 w-2 rounded-full border border-gold/40 bg-pearl" />
+                <div className="absolute left-1.5 top-[54px] h-2 w-2 rounded-full border border-gold/40 bg-pearl" />
+                <div className="absolute left-1.5 top-[81px] h-2 w-2 rounded-full border border-gold/40 bg-pearl" />
+              </div>
+
+              {/* 右半分のレイヤーを「表紙」に見立て、hover/activeで回転させて開く動きを作ります。 */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-[46%] origin-left border-l border-gold/25 bg-gradient-to-l from-navy/20 to-transparent transition-transform duration-300 group-hover:[transform:perspective(900px)_rotateY(-16deg)] group-active:[transform:perspective(900px)_rotateY(-42deg)]" />
+
+              <div className="relative z-10 flex h-full flex-col justify-between">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium tracking-[0.16em] text-charcoal/75">CONTENTS {String(featureIndex + 1).padStart(2, '0')}</p>
+                  <feature.icon className="h-6 w-6 text-navy sm:h-7 sm:w-7" />
+                </div>
+
+                <h2 className="pl-6 text-left text-sm font-semibold leading-snug text-charcoal sm:text-base">{feature.title}</h2>
+              </div>
             </Link>
           ))}
         </section>
