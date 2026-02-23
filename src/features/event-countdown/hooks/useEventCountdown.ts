@@ -5,6 +5,7 @@ import {
   fetchEventCountdownItems,
   updateEventCountdownItem,
 } from '@/features/event-countdown/api/eventCountdownApi'
+import { getTodayDateString } from '@/features/event-countdown/utils/date'
 import type {
   EventCountdownItem,
   EventCountdownItemInput,
@@ -15,11 +16,6 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000
 
 const toStartOfDay = (dateString: string) => {
   return new Date(`${dateString}T00:00:00`)
-}
-
-const getTodayDateString = () => {
-  // 入力フォームの date 値に合わせ、YYYY-MM-DD 形式で本日を作ります。
-  return new Date().toISOString().slice(0, 10)
 }
 
 export const useEventCountdown = () => {

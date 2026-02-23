@@ -1,11 +1,7 @@
 import type { EventCountdownItem, EventCountdownItemInput, EventIconKey } from '@/features/event-countdown/types/eventCountdown'
+import { getTodayDateString } from '@/features/event-countdown/utils/date'
 
 const EVENT_COUNTDOWN_STORAGE_KEY = 'lifehub:event-countdown-items'
-
-const getTodayDateString = () => {
-  // 日付入力のフォーマット (YYYY-MM-DD) に合わせて本日文字列を生成します。
-  return new Date().toISOString().slice(0, 10)
-}
 
 const isEventIconKey = (value: string): value is EventIconKey => {
   return value === 'sparkles' || value === 'fireworks' || value === 'gift' || value === 'plane' || value === 'music'
