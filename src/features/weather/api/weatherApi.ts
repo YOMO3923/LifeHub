@@ -187,7 +187,11 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
     const weatherCode = daily.weather_code[index]
     const humidity = daily.relative_humidity_2m_mean[index]
     const precipitationProbability = daily.precipitation_probability_max[index]
-    const windSpeed = daily.wind_speed_10m_max[index]
+    // APIから取得した風速はkm/h単位で返されます。
+    // UI表示と洗濯判定はm/sで扱うため、ここでm/sに変換します。
+    // 計算: km/h ÷ 3.6 = m/s
+    const windSpeedKmh = daily.wind_speed_10m_max[index]
+    const windSpeedMs = windSpeedKmh / 3.6
 
     return {
       date: daily.time[index],
@@ -199,9 +203,11 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
       maxTemperature: Math.round(daily.temperature_2m_max[index]),
       minTemperature: Math.round(daily.temperature_2m_min[index]),
       precipitationProbability: Math.round(daily.precipitation_probability_max[index]),
-      windSpeed: Math.round(windSpeed),
+      windSpeed: Math.round(windSpeedMs),
       humidity: Math.round(humidity),
-      laundry: buildLaundryJudgement({ humidity, precipitationProbability, weatherCode, windSpeed }),
+      // laundryJudgement の計算はm/s単位の値を使用しています。
+      // 気象学的な基準値（STRONG_WIND_THRESHOLD = 8 m/s）がm/s単位のためです。
+      laundry: buildLaundryJudgement({ humidity, precipitationProbability, weatherCode, windSpeed: windSpeedMs }),
     }
   })
 }

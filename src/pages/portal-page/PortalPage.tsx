@@ -1,4 +1,5 @@
-import { BookOpenText, CalendarClock, Check, CheckCheck, ClipboardList, CloudSun, Plane, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
+import { BookOpenText, CalendarClock, Check, CheckCheck, ClipboardList, CloudSun, Plane, RefreshCw, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
@@ -55,10 +56,25 @@ const LAUNDRY_TEXT_CLASS_BY_LEVEL = {
 
 export const PortalPage = () => {
   const { weatherDays, isLoading, errorMessage, selectedLocation, handleChangeLocation, retryLoadWeather } = useWeather()
-  const { highlightedEvent } = useEventCountdown()
+  const { highlightedEvent, refreshEventItems } = useEventCountdown()
+  // 再読み込みボタンクリック後、最小0.5秒間ローディング表示を保証するためのstate
+  const [isRefreshingManually, setIsRefreshingManually] = useState(false)
 
   const handleLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     handleChangeLocation(event.target.value as WeatherLocationKey)
+  }
+
+  // イベント＆天気データを強制的に再読み込みします。
+  // 日付が変わったと思われる場合に、ユーザーが手動で呼び出せます。
+  // 0.5秒のローディング表示を保証し、UXの視認性を高めています。
+  const handleRefreshAllData = async () => {
+    setIsRefreshingManually(true)
+    refreshEventItems()
+    retryLoadWeather()
+    
+    // 最小0.5秒間はローディング状態を表示
+    await new Promise(resolve => setTimeout(resolve, 500))
+    setIsRefreshingManually(false)
   }
 
   return (
@@ -66,7 +82,8 @@ export const PortalPage = () => {
     <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75 animate-in fade-in duration-500">
       {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
-        <div className="flex flex-col items-center gap-1">
+        {/* タイトルを常に中央に配置し、再読み込みボタンは右に絶対配置します。 */}
+        <div className="relative flex flex-col items-center gap-1">
           <AppHeader
             title="LifeHub"
             centerIcon={
@@ -78,6 +95,19 @@ export const PortalPage = () => {
           />
 
           <p className="text-center text-lg font-medium tracking-[0.35em] text-navy/80 sm:text-xl">PORTAL</p>
+
+          {/* 再読み込みボタン。右上に絶対配置し、タイトルの位置を変えません。 */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="absolute right-0 top-0 border-gold/50 bg-navy/50 text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
+            onClick={handleRefreshAllData}
+            disabled={isRefreshingManually}
+            aria-label="イベントと天気データを再読み込み"
+            title="イベントと天気データを再読み込み"
+          >
+            <RefreshCw className={cn('h-5 w-5', isRefreshingManually && 'animate-spin')} />
+          </Button>
         </div>
 
         <Link

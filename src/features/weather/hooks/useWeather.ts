@@ -54,6 +54,12 @@ const writeWeatherCache = (locationKey: WeatherLocationKey, weatherDays: Weather
   localStorage.setItem(getWeatherCacheKey(locationKey), JSON.stringify(cachePayload))
 }
 
+// 指定した地点のキャッシュを削除します。
+// ユーザーが明示的に更新ボタンを押したときに、強制的に新しいデータを取得するために使用します。
+const clearWeatherCache = (locationKey: WeatherLocationKey) => {
+  localStorage.removeItem(getWeatherCacheKey(locationKey))
+}
+
 export const useWeather = () => {
   const [weatherDays, setWeatherDays] = useState<WeatherForecastDay[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -93,7 +99,10 @@ export const useWeather = () => {
     setSelectedLocation(locationKey)
   }, [])
 
+  // ユーザーが更新ボタンをクリックした時に使用します。
+  // キャッシュをクリアして、強制的に新しいAPIデータを取得します。
   const retryLoadWeather = useCallback(() => {
+    clearWeatherCache(selectedLocation)
     void loadWeather(selectedLocation)
   }, [loadWeather, selectedLocation])
 
