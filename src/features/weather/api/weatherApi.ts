@@ -112,6 +112,13 @@ const buildLaundryJudgement = ({
   // 判定の最優先は「濡れるリスク」です。
   // 雨が想定される日は、外干しで再度濡れる可能性があるため洗濯非推奨にします。
   if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD || isRainy) {
+    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
+    if (isWindCaution) {
+      return {
+        level: 'white',
+        caution: '風に注意',
+      }
+    }
     return {
       level: 'white',
       // caution: '雨に注意',
@@ -124,6 +131,15 @@ const buildLaundryJudgement = ({
     precipitationProbability < GOLD_PRECIPITATION_PROBABILITY_THRESHOLD &&
     isSunny
   ) {
+    // Gold判定でも風が強い場合は注意を表示します
+    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
+    if (isWindCaution) {
+      return {
+        level: 'gold',
+        caution: '風に注意',
+      }
+    }
+
     return {
       level: 'gold',
     }
