@@ -78,23 +78,27 @@ export const PortalPage = () => {
           <p className="text-center text-lg font-medium tracking-[0.35em] text-navy/80 sm:text-xl">PORTAL</p>
         </div>
 
-        <div className="relative rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 [-webkit-touch-callout:none] sm:p-6">
+        <Link
+          to="/event-countdown"
+          className="relative block rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 transition hover:brightness-110 [-webkit-touch-callout:none] sm:p-6"
+          aria-label="イベントカウントダウンページへ移動"
+        >
           {/* タイトル: 常に中央に配置 */}
-          <Link
-            to="/event-countdown"
-            className="flex items-center justify-center gap-2 text-center touch-manipulation select-none transition hover:brightness-110"
-            aria-label="イベントカウントダウンページへ移動"
-          >
+          <div className="flex items-center justify-center gap-2 text-center">
             <CalendarClock className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
             <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
-          </Link>
+          </div>
           
           {/* イベントデータ更新ボタン: 右上に絶対配置 */}
           <Button
             variant="outline"
             size="sm"
-            className="absolute right-5 top-5 border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
-            onClick={refreshEventItems}
+            className="absolute right-5 top-5 z-10 border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              refreshEventItems()
+            }}
             aria-label="イベントデータを再読み込み"
             title="イベントデータを再読み込み"
           >
@@ -114,7 +118,7 @@ export const PortalPage = () => {
               </p>
             )}
           </div>
-        </div>
+        </Link>
 
         <section className="rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 sm:p-6">
           <div className="flex items-center justify-between gap-2">
