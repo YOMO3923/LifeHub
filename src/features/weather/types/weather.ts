@@ -12,8 +12,9 @@ export type WeatherLocationOption = {
 export type LaundryLevel = 'gold' | 'normal' | 'white'
 
 export type LaundryJudgement = {
-  description: string
   level: LaundryLevel
+  // 注意が必要な場合のみ指定（例：「風に注意」「雨に注意」）
+  caution?: string
 }
 
 export type WeatherForecastDay = {

@@ -114,7 +114,7 @@ const buildLaundryJudgement = ({
   if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD || isRainy) {
     return {
       level: 'white',
-      description: '洗濯非推奨',
+      caution: '雨に注意',
     }
   }
 
@@ -126,7 +126,6 @@ const buildLaundryJudgement = ({
   ) {
     return {
       level: 'gold',
-      description: '絶好の洗濯日和',
     }
   }
 
@@ -138,27 +137,26 @@ const buildLaundryJudgement = ({
   if (isWindCaution && isPrecipitationCaution) {
     return {
       level: 'white',
-      description: '洗濯非推奨（風・雨に注意）',
+      caution: '風・雨に注意',
     }
   }
 
   if (isWindCaution) {
     return {
       level: 'normal',
-      description: '外干しOK（風に注意）',
+      caution: '風に注意',
     }
   }
 
   if (isPrecipitationCaution) {
     return {
       level: 'white',
-      description: '洗濯非推奨（雨に注意）',
+      caution: '雨に注意',
     }
   }
 
   return {
     level: 'normal',
-    description: '外干しOK',
   }
 }
 

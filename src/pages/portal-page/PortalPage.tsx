@@ -1,12 +1,16 @@
-import { BookOpenText, CalendarClock, Check, CheckCheck, ClipboardList, CloudSun, Plane, RefreshCw, Shirt, Sparkles, UtensilsCrossed, X } from 'lucide-react'
+import { BookOpenText, CalendarClock, ClipboardList, CloudSun, Plane, RefreshCw, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import PullToRefresh from 'react-pull-to-refresh'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
 import { useEventCountdown } from '@/features/event-countdown'
 import type { LaundryLevel, WeatherLocationKey } from '@/features/weather'
 import { WEATHER_LOCATION_OPTIONS, useWeather } from '@/features/weather'
 import { cn } from '@/lib/utils'
+import goldLaundryImg from '@/assets/sokkan.jpg'
+import normalLaundryImg from '@/assets/OK.jpg'
+import whiteLaundryImg from '@/assets/NG.jpg'
 
 type PortalFeature = {
   icon: React.ComponentType<{ className?: string }>
@@ -42,17 +46,11 @@ const PORTAL_FEATURES: PortalFeature[] = [
   },
 ]
 
-const LAUNDRY_ICON_COMPONENT_BY_LEVEL: Record<LaundryLevel, React.ComponentType<{ className?: string }>> = {
-  gold: CheckCheck,
-  normal: Check,
-  white: X,
+const LAUNDRY_IMAGE_BY_LEVEL: Record<LaundryLevel, string> = {
+  gold: goldLaundryImg,
+  normal: normalLaundryImg,
+  white: whiteLaundryImg,
 }
-
-const LAUNDRY_TEXT_CLASS_BY_LEVEL = {
-  gold: 'text-gold',
-  normal: 'text-white',
-  white: 'text-white/90',
-} as const
 
 export const PortalPage = () => {
   const { weatherDays, isLoading, errorMessage, selectedLocation, handleChangeLocation, retryLoadWeather } = useWeather()
@@ -78,10 +76,21 @@ export const PortalPage = () => {
   }
 
   return (
-    // 画面全体の背景。from/via/to の3色グラデーションで単色より奥行き感を作っています。
-    <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75 animate-in fade-in duration-500">
-      {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
+    // PullToRefreshラッパー: モバイル端末での上スワイプで自動更新を実現します。
+    // iOS・Android 両方で動作し、画面上部からのドラッグで更新をトリガーします。
+    <PullToRefresh
+      onRefresh={handleRefreshAllData}
+      className="min-h-screen overflow-y-auto bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75"
+      style={{
+        // iOS での WebKit プレフィックス対応: ゴムバンド効果を正常に処理します
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain',
+      }}
+    >
+      {/* 画面全体の背景。from/via/to の3色グラデーションで単色より奥行き感を作っています。 */}
+      <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75">
+        {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
         {/* タイトルを常に中央に配置し、再読み込みボタンは右に絶対配置します。 */}
         <div className="relative flex flex-col items-center gap-1">
           <AppHeader
@@ -116,7 +125,7 @@ export const PortalPage = () => {
           aria-label="イベントカウントダウンページへ移動"
         >
           <div className="flex items-center justify-center gap-2 text-center">
-            <Sparkles className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
+            <CalendarClock className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
             <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
           </div>
 
@@ -178,7 +187,7 @@ export const PortalPage = () => {
 
             {!isLoading && !errorMessage &&
               weatherDays.map((weatherDay, weatherIndex) => {
-                const LaundryStatusIcon = LAUNDRY_ICON_COMPONENT_BY_LEVEL[weatherDay.laundry.level]
+                const laundryImage = LAUNDRY_IMAGE_BY_LEVEL[weatherDay.laundry.level]
 
                 return (
                   <article
@@ -198,14 +207,18 @@ export const PortalPage = () => {
                     <p className="mt-1 text-[10px] text-white/80">湿度 {weatherDay.humidity}% / 風速 {weatherDay.windSpeed}m/s</p>
                     <p className="mt-0.5 text-[10px] text-white/80">降水確率 {weatherDay.precipitationProbability}%</p>
 
-                    <div className="mt-1.5 flex items-center justify-center gap-1.5">
-                      <div className="relative inline-flex h-6 w-6 items-center justify-center">
-                        <Shirt className="h-4 w-4 text-gold" />
-                        <LaundryStatusIcon className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-navy text-gold" />
-                      </div>
-                      <p className={cn('text-[10px] font-medium', LAUNDRY_TEXT_CLASS_BY_LEVEL[weatherDay.laundry.level])}>
-                        {weatherDay.laundry.description}
-                      </p>
+                    {/* 洗濯判定アイコンと注意文を表示 */}
+                    <div className="mt-2 flex flex-col items-center gap-1">
+                      <img 
+                        src={laundryImage} 
+                        alt={`洗濯判定: ${weatherDay.laundry.level}`}
+                        className="h-12 w-12 object-contain"
+                      />
+                      {weatherDay.laundry.caution && (
+                        <p className="text-[9px] font-medium text-white/90">
+                          {weatherDay.laundry.caution}
+                        </p>
+                      )}
                     </div>
                   </article>
                 )
@@ -251,5 +264,6 @@ export const PortalPage = () => {
         </section>
       </div>
     </main>
+    </PullToRefresh>
   )
 }
