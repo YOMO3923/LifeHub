@@ -114,7 +114,7 @@ const buildLaundryJudgement = ({
   if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD || isRainy) {
     return {
       level: 'white',
-      caution: '雨に注意',
+      // caution: '雨に注意',
     }
   }
 
@@ -151,7 +151,7 @@ const buildLaundryJudgement = ({
   if (isPrecipitationCaution) {
     return {
       level: 'white',
-      caution: '雨に注意',
+      // caution: '雨に注意',
     }
   }
 
