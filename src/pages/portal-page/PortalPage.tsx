@@ -1,7 +1,6 @@
 import { BookOpenText, CalendarClock, ClipboardList, CloudSun, Plane, RefreshCw, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import PullToRefresh from 'react-pull-to-refresh'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
 import { useEventCountdown } from '@/features/event-countdown'
@@ -76,21 +75,10 @@ export const PortalPage = () => {
   }
 
   return (
-    // PullToRefreshラッパー: モバイル端末での上スワイプで自動更新を実現します。
-    // iOS・Android 両方で動作し、画面上部からのドラッグで更新をトリガーします。
-    <PullToRefresh
-      onRefresh={handleRefreshAllData}
-      className="min-h-screen overflow-y-auto bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75"
-      style={{
-        // iOS での WebKit プレフィックス対応: ゴムバンド効果を正常に処理します
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'contain',
-      }}
-    >
-      {/* 画面全体の背景。from/via/to の3色グラデーションで単色より奥行き感を作っています。 */}
-      <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75">
-        {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
+    // 画面全体の背景。from/via/to の3色グラデーションで単色より奥行き感を作っています。
+    <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75 animate-in fade-in duration-500">
+      {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
         {/* タイトルを常に中央に配置し、再読み込みボタンは右に絶対配置します。 */}
         <div className="relative flex flex-col items-center gap-1">
           <AppHeader
@@ -264,6 +252,5 @@ export const PortalPage = () => {
         </section>
       </div>
     </main>
-    </PullToRefresh>
   )
 }
