@@ -1,5 +1,4 @@
 import { BookOpenText, CalendarClock, ClipboardList, CloudSun, Plane, RefreshCw, Sparkles, UtensilsCrossed } from 'lucide-react'
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
@@ -54,24 +53,9 @@ const LAUNDRY_IMAGE_BY_LEVEL: Record<LaundryLevel, string> = {
 export const PortalPage = () => {
   const { weatherDays, isLoading, errorMessage, selectedLocation, handleChangeLocation, retryLoadWeather } = useWeather()
   const { highlightedEvent, refreshEventItems } = useEventCountdown()
-  // 再読み込みボタンクリック後、最小0.5秒間ローディング表示を保証するためのstate
-  const [isRefreshingManually, setIsRefreshingManually] = useState(false)
 
   const handleLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     handleChangeLocation(event.target.value as WeatherLocationKey)
-  }
-
-  // イベント＆天気データを強制的に再読み込みします。
-  // 日付が変わったと思われる場合に、ユーザーが手動で呼び出せます。
-  // 0.5秒のローディング表示を保証し、UXの視認性を高めています。
-  const handleRefreshAllData = async () => {
-    setIsRefreshingManually(true)
-    refreshEventItems()
-    retryLoadWeather()
-    
-    // 最小0.5秒間はローディング状態を表示
-    await new Promise(resolve => setTimeout(resolve, 500))
-    setIsRefreshingManually(false)
   }
 
   return (
@@ -79,8 +63,8 @@ export const PortalPage = () => {
     <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75 animate-in fade-in duration-500">
       {/* max-w-5xl で読みやすい横幅に制限し、モバイルでも中央にまとまるレイアウトにしています。 */}
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
-        {/* タイトルを常に中央に配置し、再読み込みボタンは右に絶対配置します。 */}
-        <div className="relative flex flex-col items-center gap-1">
+        {/* タイトルを常に中央に配置します。 */}
+        <div className="flex flex-col items-center gap-1">
           <AppHeader
             title="LifeHub"
             centerIcon={
@@ -92,29 +76,30 @@ export const PortalPage = () => {
           />
 
           <p className="text-center text-lg font-medium tracking-[0.35em] text-navy/80 sm:text-xl">PORTAL</p>
-
-          {/* 再読み込みボタン。右上に絶対配置し、タイトルの位置を変えません。 */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute right-0 top-0 border-gold/50 bg-navy/50 text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
-            onClick={handleRefreshAllData}
-            disabled={isRefreshingManually}
-            aria-label="イベントと天気データを再読み込み"
-            title="イベントと天気データを再読み込み"
-          >
-            <RefreshCw className={cn('h-5 w-5', isRefreshingManually && 'animate-spin')} />
-          </Button>
         </div>
 
-        <Link
-          to="/event-countdown"
-          className="block touch-manipulation select-none rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 transition hover:brightness-110 [-webkit-touch-callout:none] sm:p-6"
-          aria-label="イベントカウントダウンページへ移動"
-        >
-          <div className="flex items-center justify-center gap-2 text-center">
-            <CalendarClock className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
-            <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
+        <div className="relative rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 [-webkit-touch-callout:none] sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              to="/event-countdown"
+              className="flex flex-1 items-center justify-center gap-2 text-center touch-manipulation select-none transition hover:brightness-110"
+              aria-label="イベントカウントダウンページへ移動"
+            >
+              <CalendarClock className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
+              <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
+            </Link>
+            
+            {/* イベントデータ更新ボタン */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0 border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
+              onClick={refreshEventItems}
+              aria-label="イベントデータを再読み込み"
+              title="イベントデータを再読み込み"
+            >
+              <RefreshCw className={cn('h-4 w-4')} />
+            </Button>
           </div>
 
           <div className="mt-3 rounded-2xl border-[0.5px] border-gold/45 bg-charcoal/40 px-4 py-4 text-center">
@@ -130,7 +115,7 @@ export const PortalPage = () => {
               </p>
             )}
           </div>
-        </Link>
+        </div>
 
         <section className="rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-gold backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 sm:p-6">
           <div className="flex items-center justify-between gap-2">
@@ -139,19 +124,34 @@ export const PortalPage = () => {
               <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Weather</h2>
             </div>
 
-            {/* ラベル文字を省略し、タイトル行の右端にプルダウンだけを配置します。 */}
-            <select
-              aria-label="天気の地点選択"
-              className="max-w-[104px] rounded-md border border-gold/70 bg-charcoal/60 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold sm:max-w-none sm:text-sm"
-              value={selectedLocation}
-              onChange={handleLocationChange}
-            >
-              {WEATHER_LOCATION_OPTIONS.map((locationOption) => (
-                <option key={locationOption.key} value={locationOption.key}>
-                  {locationOption.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              {/* 天気データ更新ボタン */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0 border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
+                onClick={retryLoadWeather}
+                disabled={isLoading}
+                aria-label="天気データを再読み込み"
+                title="天気データを再読み込み"
+              >
+                <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+              </Button>
+
+              {/* ラベル文字を省略し、タイトル行の右端にプルダウンだけを配置します。 */}
+              <select
+                aria-label="天気の地点選択"
+                className="max-w-[104px] rounded-md border border-gold/70 bg-charcoal/60 px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold sm:max-w-none sm:text-sm"
+                value={selectedLocation}
+                onChange={handleLocationChange}
+              >
+                {WEATHER_LOCATION_OPTIONS.map((locationOption) => (
+                  <option key={locationOption.key} value={locationOption.key}>
+                    {locationOption.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 7日分は常に横スライダー表示にして、狭い画面でも情報密度を落とさない構造にしています。 */}
