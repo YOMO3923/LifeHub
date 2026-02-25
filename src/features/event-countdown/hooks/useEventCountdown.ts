@@ -23,9 +23,6 @@ export const useEventCountdown = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  // 日付が変わったときにカウントダウンを強制再計算するためのキー。
-  // 手動の再読み込みやアプリ起動時に更新します。
-  const [refreshKey, setRefreshKey] = useState(0)
 
   const loadEventItems = useCallback(async () => {
     setIsLoading(true)
@@ -34,9 +31,8 @@ export const useEventCountdown = () => {
     try {
       const fetchedItems = await fetchEventCountdownItems()
       setEventItems(fetchedItems)
-      // データ読み込み完了時に refreshKey を更新し、
-      // useMemo で依存配列を通じて再計算を強制します。
-      setRefreshKey((prev) => prev + 1)
+      // ローディング表示を0.5秒間表示
+      await new Promise((resolve) => setTimeout(resolve, 500))
     } catch {
       setErrorMessage('イベント一覧の取得に失敗しました。時間をおいて再試行してください。')
     } finally {
@@ -158,10 +154,10 @@ export const useEventCountdown = () => {
     }
   }, [])
 
+  const todayDateString = getTodayDateString()
+
   const upcomingEventItems = useMemo<UpcomingEventCountdownItem[]>(() => {
-    // refreshKey は日付が変わった時のカウントダウン再計算をトリガーするために必要な依存です。
-    // eslint-disable react-hooks/exhaustive-deps
-    const todayStart = toStartOfDay(getTodayDateString()).getTime()
+    const todayStart = toStartOfDay(todayDateString).getTime()
 
     return eventItems
       .map((eventItem) => {
@@ -175,7 +171,7 @@ export const useEventCountdown = () => {
       })
       .filter((eventItem) => eventItem.daysUntil >= 0)
       .sort((firstItem, secondItem) => firstItem.daysUntil - secondItem.daysUntil)
-  }, [eventItems, refreshKey])
+  }, [eventItems, todayDateString])
 
   const highlightedEvent = upcomingEventItems[0] ?? null
 

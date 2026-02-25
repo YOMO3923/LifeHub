@@ -1,5 +1,5 @@
 import { CalendarClock, Gift, Music, PartyPopper, Plane, Sparkles } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { Button } from '@/components/ui'
 import { useEventCountdown } from '@/features/event-countdown/hooks/useEventCountdown'
@@ -44,6 +44,14 @@ const EVENT_ICON_OPTIONS: EventIconOption[] = [
   },
 ]
 
+const ICON_MAP: Record<EventIconKey, React.ComponentType<{ className?: string }>> = {
+  sparkles: Sparkles,
+  fireworks: PartyPopper,
+  gift: Gift,
+  plane: Plane,
+  music: Music,
+}
+
 const DEFAULT_DRAFT: EventCountdownDraft = {
   title: '',
   date: '',
@@ -56,10 +64,6 @@ const formatEventDate = (dateString: string) => {
     day: 'numeric',
     weekday: 'short',
   }).format(new Date(`${dateString}T00:00:00`))
-}
-
-const getEventIconComponent = (iconKey: EventIconKey) => {
-  return EVENT_ICON_OPTIONS.find((iconOption) => iconOption.key === iconKey)?.icon ?? Sparkles
 }
 
 const getCountdownLabel = (eventItem: UpcomingEventCountdownItem) => {
@@ -87,14 +91,6 @@ export const EventCountdownPanel = () => {
   const [draft, setDraft] = useState<EventCountdownDraft>(DEFAULT_DRAFT)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [deleteTargetItem, setDeleteTargetItem] = useState<EventCountdownItem | null>(null)
-
-  const highlightedIcon = useMemo(() => {
-    if (!highlightedEvent) {
-      return Sparkles
-    }
-
-    return getEventIconComponent(highlightedEvent.iconKey)
-  }, [highlightedEvent])
 
   const handleChangeDraft = (key: keyof EventCountdownDraft, value: string) => {
     setDraft((currentDraft) => ({
@@ -175,8 +171,6 @@ export const EventCountdownPanel = () => {
     handleCloseDeleteModal()
   }
 
-  const HighlightedIcon = highlightedIcon
-
   return (
     <section className="rounded-3xl border-[0.5px] border-gold bg-navy/80 p-5 text-white backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-700 sm:p-6">
       <div className="flex items-center justify-center gap-2 text-center">
@@ -195,14 +189,23 @@ export const EventCountdownPanel = () => {
         {highlightedEvent && (
           <div className="flex min-h-[108px] flex-col items-center justify-center gap-2 text-center animate-in fade-in-0 zoom-in-95 duration-500">
             <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border-[0.5px] border-gold bg-navy-gradient">
-              <HighlightedIcon className="h-7 w-7 text-gold" />
+              {React.createElement(ICON_MAP[highlightedEvent.iconKey], {
+                className: 'h-7 w-7 text-gold',
+              })}
             </span>
             <p className="text-xs text-gold/90">次に楽しみなイベント</p>
             {highlightedEvent.daysUntil !== 0 && (
               <p className="text-2xl font-semibold tracking-[0.02em] text-white sm:text-3xl">{highlightedEvent.title}</p>
             )}
             <p className="text-xs text-white/80">{formatEventDate(highlightedEvent.date)}</p>
-            <p className="text-base font-semibold text-gold sm:text-lg">{getCountdownLabel(highlightedEvent)}</p>
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold"></div>
+                <p className="text-sm text-gold/90">イベント情報を取得中...</p>
+              </div>
+            ) : (
+              <p className="text-base font-semibold text-gold sm:text-lg">{getCountdownLabel(highlightedEvent)}</p>
+            )}
           </div>
         )}
       </article>
@@ -288,7 +291,7 @@ export const EventCountdownPanel = () => {
         )}
 
         {upcomingEventItems.map((eventItem) => {
-          const EventIcon = getEventIconComponent(eventItem.iconKey)
+          const EventIcon = ICON_MAP[eventItem.iconKey]
           const isEditingTarget = editingEventId === eventItem.id
 
           return (

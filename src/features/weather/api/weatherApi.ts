@@ -110,8 +110,24 @@ const buildLaundryJudgement = ({
   const isRainy = RAINY_WEATHER_CODES.has(weatherCode)
 
   // 判定の最優先は「濡れるリスク」です。
-  // 雨が想定される日は、外干しで再度濡れる可能性があるため洗濯非推奨にします。
-  if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD || isRainy) {
+  // 天気コードで雨と判定された場合は、降水確率の値に関わらず外干し非推奨にします。
+  // これにより、天気コードと UI表示の矛盾を解決します。
+  if (isRainy) {
+    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
+    if (isWindCaution) {
+      return {
+        level: 'white',
+        caution: '風に注意',
+      }
+    }
+    return {
+      level: 'white',
+      // caution: '雨に注意',
+    }
+  }
+
+  // 降水確率が高い場合も外干し非推奨にします。
+  if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD) {
     const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
     if (isWindCaution) {
       return {
