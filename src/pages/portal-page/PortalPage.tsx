@@ -56,7 +56,7 @@ const formatShortDate = (dateString: string) => {
 
 const getEventPeriodLabel = (startDate: string, endDate: string) => {
   if (startDate === endDate) {
-    return ''
+    return `（${formatShortDate(startDate)}）`
   }
 
   return `（${formatShortDate(startDate)}～${formatShortDate(endDate)}）`
@@ -107,13 +107,16 @@ export const PortalPage = () => {
             )}
 
             {highlightedEvents.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {highlightedEvents.map((highlightedEvent) => (
-                  <p key={highlightedEvent.id} className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
-                    {highlightedEvent.daysUntil === 0
-                      ? `${highlightedEvent.title} 当日！！${getEventPeriodLabel(highlightedEvent.startDate, highlightedEvent.endDate)}`
-                      : `${highlightedEvent.title} まであと${highlightedEvent.daysUntil}日！${getEventPeriodLabel(highlightedEvent.startDate, highlightedEvent.endDate)}`}
-                  </p>
+                  <div key={highlightedEvent.id} className="space-y-0.5">
+                    <p className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
+                      {highlightedEvent.daysUntil === 0
+                        ? `${highlightedEvent.title} 当日！！`
+                        : `${highlightedEvent.title} まであと${highlightedEvent.daysUntil}日！`}
+                    </p>
+                    <p className="text-xs text-gold/70">{getEventPeriodLabel(highlightedEvent.startDate, highlightedEvent.endDate)}</p>
+                  </div>
                 ))}
               </div>
             )}
