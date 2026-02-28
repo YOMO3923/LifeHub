@@ -13,7 +13,30 @@ const GOLD_HUMIDITY_THRESHOLD = 65
 const GOLD_PRECIPITATION_PROBABILITY_THRESHOLD = 20
 const NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD = 30
 const WHITE_PRECIPITATION_PROBABILITY_THRESHOLD = 60
+const HIGH_HUMIDITY_THRESHOLD = 80
 const STRONG_WIND_THRESHOLD = 8
+const VERY_STRONG_WIND_THRESHOLD = 11
+
+type WeatherCategory =
+  | 'clear'
+  | 'partlyCloudy'
+  | 'cloudy'
+  | 'fog'
+  | 'drizzle'
+  | 'freezingDrizzle'
+  | 'rain'
+  | 'freezingRain'
+  | 'snow'
+  | 'rainShower'
+  | 'snowShower'
+  | 'thunderstorm'
+  | 'unknown'
+
+type WeatherCodeDetail = {
+  category: WeatherCategory
+  emoji: string
+  label: string
+}
 
 const WEATHER_LOCATION_MAP: Record<WeatherLocationKey, { label: string; latitude: number; longitude: number }> = {
   // 千葉をデフォルト地点にします。
@@ -34,161 +57,133 @@ export const WEATHER_LOCATION_OPTIONS: WeatherLocationOption[] = [
   { key: 'tokyo', label: WEATHER_LOCATION_MAP.tokyo.label },
 ]
 
-const SUNNY_WEATHER_CODES = new Set([0, 1])
-const RAINY_WEATHER_CODES = new Set([
-  51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99,
-])
-
-const getWeatherLabel = (weatherCode: number) => {
-  if (weatherCode === 0) {
-    return '快晴'
-  }
-
-  if (weatherCode === 1) {
-    return '晴れ'
-  }
-
-  if (weatherCode === 2) {
-    return '薄曇り'
-  }
-
-  if (weatherCode === 3) {
-    return '曇り'
-  }
-
-  if (weatherCode === 45 || weatherCode === 48) {
-    return '霧'
-  }
-
-  if (RAINY_WEATHER_CODES.has(weatherCode)) {
-    return '雨'
-  }
-
-  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) {
-    return '雪'
-  }
-
-  return '天気情報'
+const WEATHER_CODE_DETAIL_MAP: Record<number, WeatherCodeDetail> = {
+  0: { category: 'clear', label: '快晴', emoji: '☀️' },
+  1: { category: 'clear', label: '晴れ', emoji: '☀️' },
+  2: { category: 'partlyCloudy', label: '薄曇り', emoji: '🌤️' },
+  3: { category: 'cloudy', label: '曇り', emoji: '☁️' },
+  45: { category: 'fog', label: '霧', emoji: '🌫️' },
+  48: { category: 'fog', label: '着氷性の霧', emoji: '🌫️' },
+  51: { category: 'drizzle', label: '弱い霧雨', emoji: '🌦️' },
+  53: { category: 'drizzle', label: '霧雨', emoji: '🌦️' },
+  55: { category: 'drizzle', label: '強い霧雨', emoji: '🌧️' },
+  56: { category: 'freezingDrizzle', label: '弱い着氷性の霧雨', emoji: '🌧️' },
+  57: { category: 'freezingDrizzle', label: '強い着氷性の霧雨', emoji: '🌧️' },
+  61: { category: 'rain', label: '弱い雨', emoji: '🌧️' },
+  63: { category: 'rain', label: '雨', emoji: '🌧️' },
+  65: { category: 'rain', label: '強い雨', emoji: '🌧️' },
+  66: { category: 'freezingRain', label: '弱い着氷性の雨', emoji: '🌧️' },
+  67: { category: 'freezingRain', label: '強い着氷性の雨', emoji: '🌧️' },
+  71: { category: 'snow', label: '弱い雪', emoji: '❄️' },
+  73: { category: 'snow', label: '雪', emoji: '❄️' },
+  75: { category: 'snow', label: '強い雪', emoji: '❄️' },
+  77: { category: 'snow', label: '雪粒', emoji: '❄️' },
+  80: { category: 'rainShower', label: '弱いにわか雨', emoji: '🌦️' },
+  81: { category: 'rainShower', label: 'にわか雨', emoji: '🌧️' },
+  82: { category: 'rainShower', label: '強いにわか雨', emoji: '🌧️' },
+  85: { category: 'snowShower', label: '弱いにわか雪', emoji: '🌨️' },
+  86: { category: 'snowShower', label: '強いにわか雪', emoji: '🌨️' },
+  95: { category: 'thunderstorm', label: '雷雨', emoji: '⛈️' },
+  96: { category: 'thunderstorm', label: '弱いひょうを伴う雷雨', emoji: '⛈️' },
+  99: { category: 'thunderstorm', label: '強いひょうを伴う雷雨', emoji: '⛈️' },
 }
 
-const getWeatherEmoji = (weatherCode: number) => {
-  if (weatherCode === 0 || weatherCode === 1) {
-    return '☀️'
+const getWeatherCodeDetail = (weatherCode: number): WeatherCodeDetail => {
+  return WEATHER_CODE_DETAIL_MAP[weatherCode] ?? {
+    category: 'unknown',
+    label: '天気情報',
+    emoji: '🌈',
   }
-
-  if (weatherCode === 2) {
-    return '🌤️'
-  }
-
-  if (weatherCode === 3 || weatherCode === 45 || weatherCode === 48) {
-    return '☁️'
-  }
-
-  if (RAINY_WEATHER_CODES.has(weatherCode)) {
-    return '🌧️'
-  }
-
-  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) {
-    return '❄️'
-  }
-
-  return '🌈'
 }
 
 const buildLaundryJudgement = ({
   humidity,
   precipitationProbability,
-  weatherCode,
+  weatherCategory,
   windSpeed,
 }: {
   humidity: number
   precipitationProbability: number
-  weatherCode: number
+  weatherCategory: WeatherCategory
   windSpeed: number
 }): LaundryJudgement => {
-  const isSunny = SUNNY_WEATHER_CODES.has(weatherCode)
-  const isRainy = RAINY_WEATHER_CODES.has(weatherCode)
+  const cautionReasons: string[] = []
 
-  // 判定の最優先は「濡れるリスク」です。
-  // 天気コードで雨と判定された場合は、降水確率の値に関わらず外干し非推奨にします。
-  // これにより、天気コードと UI表示の矛盾を解決します。
-  if (isRainy) {
-    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
-    if (isWindCaution) {
-      return {
-        level: 'white',
-        caution: '風に注意',
-      }
+  const isStrongWind = windSpeed >= STRONG_WIND_THRESHOLD
+  const isVeryStrongWind = windSpeed >= VERY_STRONG_WIND_THRESHOLD
+  const isHighHumidity = humidity >= HIGH_HUMIDITY_THRESHOLD
+  const hasHighPrecipitationRisk = precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD
+  const hasModeratePrecipitationRisk = precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
+  const isClearLike = weatherCategory === 'clear' || weatherCategory === 'partlyCloudy'
+
+  const severeWetCategories = new Set<WeatherCategory>(['thunderstorm', 'snow', 'snowShower', 'freezingRain', 'freezingDrizzle'])
+  const wetCategories = new Set<WeatherCategory>(['drizzle', 'rain', 'rainShower'])
+
+  // 1) まずは「濡れる・危険」系リスクを優先判定します。
+  //    ここを先に評価することで、晴れ表示でも降水リスクが高い日は NG になります。
+  if (severeWetCategories.has(weatherCategory) || hasHighPrecipitationRisk) {
+    if (weatherCategory === 'thunderstorm') {
+      cautionReasons.push('雷雨に注意')
+    } else if (weatherCategory === 'snow' || weatherCategory === 'snowShower') {
+      cautionReasons.push('雪に注意')
+    } else {
+      cautionReasons.push('雨に注意')
     }
+
+    if (isStrongWind) {
+      cautionReasons.push('風に注意')
+    }
+
     return {
       level: 'white',
-      // caution: '雨に注意',
+      caution: cautionReasons.join('・'),
     }
   }
 
-  // 降水確率が高い場合も外干し非推奨にします。
-  if (precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD) {
-    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
-    if (isWindCaution) {
-      return {
-        level: 'white',
-        caution: '風に注意',
-      }
+  if (wetCategories.has(weatherCategory) || hasModeratePrecipitationRisk) {
+    cautionReasons.push('雨に注意')
+
+    if (isStrongWind) {
+      cautionReasons.push('風に注意')
     }
+
     return {
       level: 'white',
-      // caution: '雨に注意',
+      caution: cautionReasons.join('・'),
     }
   }
 
-  // 乾きやすさと雨リスクの両方を満たす場合のみ Gold 判定にします。
+  // 2) 降水リスクが低い場合にのみ「乾きやすさ」を評価します。
+  //    晴れ寄り・湿度低め・降水確率低め・風が極端に強くない、の4条件で Gold にします。
   if (
+    isClearLike &&
     humidity < GOLD_HUMIDITY_THRESHOLD &&
     precipitationProbability < GOLD_PRECIPITATION_PROBABILITY_THRESHOLD &&
-    isSunny
+    !isVeryStrongWind
   ) {
-    // Gold判定でも風が強い場合は注意を表示します
-    const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
-    if (isWindCaution) {
-      return {
-        level: 'gold',
-        caution: '風に注意',
-      }
+    if (isStrongWind) {
+      cautionReasons.push('風に注意')
     }
 
     return {
       level: 'gold',
+      caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
     }
   }
 
-  // 中間状態は「通常判定」として返し、外干し可否をユーザーが判断しやすくします。
-  // 風速が強い日は飛散・型崩れリスクがあるため、補足メッセージを分けています。
-  const isWindCaution = windSpeed >= STRONG_WIND_THRESHOLD
-  const isPrecipitationCaution = precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
-
-  if (isWindCaution && isPrecipitationCaution) {
-    return {
-      level: 'white',
-      caution: '風・雨に注意',
-    }
+  // 3) それ以外は通常判定。
+  //    ただし、乾きにくさの要因（湿度・風）は注意文として明示します。
+  if (isHighHumidity) {
+    cautionReasons.push('湿気に注意')
   }
 
-  if (isWindCaution) {
-    return {
-      level: 'normal',
-      caution: '風に注意',
-    }
-  }
-
-  if (isPrecipitationCaution) {
-    return {
-      level: 'white',
-      // caution: '雨に注意',
-    }
+  if (isStrongWind) {
+    cautionReasons.push('風に注意')
   }
 
   return {
     level: 'normal',
+    caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
   }
 }
 
@@ -215,6 +210,7 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
 
   return Array.from({ length: dailyLength }, (_, index) => {
     const weatherCode = daily.weather_code[index]
+    const weatherDetail = getWeatherCodeDetail(weatherCode)
     const humidity = daily.relative_humidity_2m_mean[index]
     const precipitationProbability = daily.precipitation_probability_max[index]
     // APIから取得した風速はkm/h単位で返されます。
@@ -228,8 +224,8 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
       dateLabel: toDateLabel(daily.time[index]),
       isToday: index === 0,
       weatherCode,
-      weatherEmoji: getWeatherEmoji(weatherCode),
-      weatherLabel: getWeatherLabel(weatherCode),
+      weatherEmoji: weatherDetail.emoji,
+      weatherLabel: weatherDetail.label,
       maxTemperature: Math.round(daily.temperature_2m_max[index]),
       minTemperature: Math.round(daily.temperature_2m_min[index]),
       precipitationProbability: Math.round(daily.precipitation_probability_max[index]),
@@ -237,7 +233,12 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
       humidity: Math.round(humidity),
       // laundryJudgement の計算はm/s単位の値を使用しています。
       // 気象学的な基準値（STRONG_WIND_THRESHOLD = 8 m/s）がm/s単位のためです。
-      laundry: buildLaundryJudgement({ humidity, precipitationProbability, weatherCode, windSpeed: windSpeedMs }),
+      laundry: buildLaundryJudgement({
+        humidity,
+        precipitationProbability,
+        weatherCategory: weatherDetail.category,
+        windSpeed: windSpeedMs,
+      }),
     }
   })
 }

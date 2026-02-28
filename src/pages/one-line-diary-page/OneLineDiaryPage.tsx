@@ -1,11 +1,28 @@
-import { BookOpenText } from 'lucide-react'
-import { FeaturePlaceholderPage } from '@/components/common/FeaturePlaceholderPage'
-
-// この定数は「今は準備中であること」をユーザーへ明確に伝えるための文言です。
-const DESCRIPTION =
-  'One-Line Diary 機能は現在準備中です。カレンダーから日付を選び、当日と過去日に一言を残せる形で実装予定です。'
+import { Sparkles } from 'lucide-react'
+import { AppHeader } from '@/components/common/AppHeader'
+import { OneLineDiaryPanel } from '@/features/one-line-diary'
 
 export const OneLineDiaryPage = () => {
-  // 共通プレースホルダーを再利用することで、ページごとのデザイン差分を最小化し保守しやすくします。
-  return <FeaturePlaceholderPage title="One-Line Diary" description={DESCRIPTION} cardIcon={BookOpenText} />
+  return (
+    // ポータルと同じグラデーション背景を使い、機能間を移動しても統一感を維持します。
+    <main className="min-h-screen bg-gradient-to-br from-gold/35 via-charcoal/55 to-navy/75 animate-in fade-in duration-500">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-10 pt-10 animate-in slide-in-from-bottom-2 duration-700">
+        <AppHeader
+          title="LifeHub"
+          canGoBack
+          centerIcon={
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-[0.5px] border-gold bg-navy-gradient shadow-sm sm:h-14 sm:w-14">
+              <Sparkles className="h-7 w-7 text-gold sm:h-8 sm:w-8" />
+            </span>
+          }
+        />
+
+        <p className="-mt-2 text-center text-lg font-medium tracking-[0.35em] text-navy/80 uppercase sm:text-xl">
+          One-Line Diary
+        </p>
+
+        <OneLineDiaryPanel />
+      </div>
+    </main>
+  )
 }

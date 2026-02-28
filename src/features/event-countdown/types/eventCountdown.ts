@@ -2,24 +2,27 @@
 // 将来DBへ移行する際も、この型を基準にマッピングすれば画面側の修正を最小化できます。
 export type EventCountdownItem = {
   createdAt: number
-  date: string
+  endDate: string
   iconKey: EventIconKey
   id: string
+  startDate: string
   title: string
 }
 
 // 保存時に画面から渡す入力値です。
 // id/createdAt は保存層で採番するため、入力型からは除外します。
 export type EventCountdownItemInput = {
-  date: string
+  endDate: string
   iconKey: EventIconKey
+  startDate: string
   title: string
 }
 
 // フォームの編集中データ。入力途中の状態管理専用です。
 export type EventCountdownDraft = {
-  date: string
+  endDate: string
   iconKey: EventIconKey
+  startDate: string
   title: string
 }
 

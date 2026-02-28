@@ -1,21 +1,12 @@
-import type {
-  OneLineDiaryEntry,
-  OneLineDiaryEntryInput,
-} from '@/features/one-line-diary/types/oneLineDiary'
+import { localStorageDiaryRepository } from '@/features/one-line-diary/api/localStorageDiaryRepository'
+import type { DiaryMap } from '@/features/one-line-diary/types/oneLineDiary'
 
-// ここは将来バックエンド通信へ置き換える前提の仮APIです。
-// 先に関数シグネチャを固定しておくと、UI実装を先行して進めやすくなります。
-export const fetchOneLineDiaryEntries = async (): Promise<OneLineDiaryEntry[]> => {
-  return []
+// 既存構成との互換用ファサードです。
+// 新規実装は DiaryRepository を直接利用し、このファイルは段階移行の中継として残します。
+export const fetchOneLineDiaryMap = async (): Promise<DiaryMap> => {
+  return localStorageDiaryRepository.loadAll()
 }
 
-// 作成・更新を1つの関数に寄せることで、画面側は「保存する」という意図だけに集中できます。
-export const upsertOneLineDiaryEntry = async (
-  input: OneLineDiaryEntryInput
-): Promise<OneLineDiaryEntry> => {
-  return {
-    id: crypto.randomUUID(),
-    date: input.date,
-    note: input.note,
-  }
+export const upsertOneLineDiaryByDate = async (dateKey: string, note: string): Promise<void> => {
+  await localStorageDiaryRepository.saveByDate(dateKey, note)
 }

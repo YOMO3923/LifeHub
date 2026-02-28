@@ -53,13 +53,23 @@ export const useEventCountdown = () => {
       return null
     }
 
-    if (!input.date) {
-      setErrorMessage('日程を入力してください。')
+    if (!input.startDate) {
+      setErrorMessage('開始日を入力してください。')
       return null
     }
 
-    if (input.date < todayDateString) {
-      setErrorMessage('本日以降の日程を入力してください。')
+    if (!input.endDate) {
+      setErrorMessage('終了日を入力してください。')
+      return null
+    }
+
+    if (input.startDate > input.endDate) {
+      setErrorMessage('終了日は開始日以降の日付を入力してください。')
+      return null
+    }
+
+    if (input.endDate < todayDateString) {
+      setErrorMessage('終了日は本日以降の日程を入力してください。')
       return null
     }
 
@@ -82,13 +92,14 @@ export const useEventCountdown = () => {
     try {
       const savedItem = await createEventCountdownItem({
         title: validatedInput.title,
-        date: validatedInput.date,
+        startDate: validatedInput.startDate,
+        endDate: validatedInput.endDate,
         iconKey: validatedInput.iconKey,
       })
 
       setEventItems((currentItems) => {
         const nextItems = [...currentItems, savedItem]
-        return nextItems.sort((firstItem, secondItem) => firstItem.date.localeCompare(secondItem.date))
+        return nextItems.sort((firstItem, secondItem) => firstItem.startDate.localeCompare(secondItem.startDate))
       })
 
       return true
@@ -113,7 +124,8 @@ export const useEventCountdown = () => {
     try {
       const updatedItem = await updateEventCountdownItem(eventId, {
         title: validatedInput.title,
-        date: validatedInput.date,
+        startDate: validatedInput.startDate,
+        endDate: validatedInput.endDate,
         iconKey: validatedInput.iconKey,
       })
 
@@ -126,7 +138,7 @@ export const useEventCountdown = () => {
           return updatedItem
         })
 
-        return nextItems.sort((firstItem, secondItem) => firstItem.date.localeCompare(secondItem.date))
+        return nextItems.sort((firstItem, secondItem) => firstItem.startDate.localeCompare(secondItem.startDate))
       })
 
       return true
@@ -161,17 +173,35 @@ export const useEventCountdown = () => {
 
     return eventItems
       .map((eventItem) => {
-        const eventStart = toStartOfDay(eventItem.date).getTime()
-        const daysUntil = Math.ceil((eventStart - todayStart) / MS_PER_DAY)
+        const eventStart = toStartOfDay(eventItem.startDate).getTime()
+        const eventEnd = toStartOfDay(eventItem.endDate).getTime()
+        const isDuringPeriod = todayStart >= eventStart && todayStart <= eventEnd
+        const daysUntil = isDuringPeriod ? 0 : Math.ceil((eventStart - todayStart) / MS_PER_DAY)
 
         return {
           ...eventItem,
           daysUntil,
         }
       })
-      .filter((eventItem) => eventItem.daysUntil >= 0)
-      .sort((firstItem, secondItem) => firstItem.daysUntil - secondItem.daysUntil)
+      .filter((eventItem) => eventItem.endDate >= todayDateString)
+      .sort((firstItem, secondItem) => {
+        if (firstItem.daysUntil !== secondItem.daysUntil) {
+          return firstItem.daysUntil - secondItem.daysUntil
+        }
+
+        return firstItem.startDate.localeCompare(secondItem.startDate)
+      })
   }, [eventItems, todayDateString])
+
+  const highlightedEvents = useMemo(() => {
+    const nearestDaysUntil = upcomingEventItems[0]?.daysUntil
+
+    if (nearestDaysUntil === undefined) {
+      return []
+    }
+
+    return upcomingEventItems.filter((eventItem) => eventItem.daysUntil === nearestDaysUntil)
+  }, [upcomingEventItems])
 
   const highlightedEvent = upcomingEventItems[0] ?? null
 
@@ -183,6 +213,7 @@ export const useEventCountdown = () => {
   }, [loadEventItems])
 
   return {
+    highlightedEvents,
     highlightedEvent,
     eventItems,
     upcomingEventItems,

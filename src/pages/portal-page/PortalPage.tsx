@@ -37,11 +37,6 @@ const PORTAL_FEATURES: PortalFeature[] = [
     icon: UtensilsCrossed,
     to: '/cooking-support',
   },
-  {
-    title: 'Event Countdown',
-    icon: CalendarClock,
-    to: '/event-countdown',
-  },
 ]
 
 const LAUNDRY_IMAGE_BY_LEVEL: Record<LaundryLevel, string> = {
@@ -50,9 +45,26 @@ const LAUNDRY_IMAGE_BY_LEVEL: Record<LaundryLevel, string> = {
   white: whiteLaundryImg,
 }
 
+const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ja-JP', {
+  month: 'numeric',
+  day: 'numeric',
+})
+
+const formatShortDate = (dateString: string) => {
+  return SHORT_DATE_FORMATTER.format(new Date(`${dateString}T00:00:00`))
+}
+
+const getEventPeriodLabel = (startDate: string, endDate: string) => {
+  if (startDate === endDate) {
+    return ''
+  }
+
+  return `（${formatShortDate(startDate)}～${formatShortDate(endDate)}）`
+}
+
 export const PortalPage = () => {
   const { weatherDays, isLoading, errorMessage, selectedLocation, handleChangeLocation, retryLoadWeather } = useWeather()
-  const { highlightedEvent, refreshEventItems } = useEventCountdown()
+  const { highlightedEvents } = useEventCountdown()
 
   const handleLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     handleChangeLocation(event.target.value as WeatherLocationKey)
@@ -88,34 +100,22 @@ export const PortalPage = () => {
             <CalendarClock className="h-5 w-5 text-gold sm:h-6 sm:w-6" />
             <h2 className="text-lg font-semibold tracking-[0.06em] text-white sm:text-xl">Event Countdown</h2>
           </div>
-          
-          {/* イベントデータ更新ボタン: 右上に絶対配置 */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute right-5 top-5 z-10 border-gold/50 bg-transparent text-gold hover:bg-gold/10 hover:text-gold disabled:opacity-50"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              refreshEventItems()
-            }}
-            aria-label="イベントデータを再読み込み"
-            title="イベントデータを再読み込み"
-          >
-            <RefreshCw className={cn('h-4 w-4')} />
-          </Button>
 
           <div className="mt-3 rounded-2xl border-[0.5px] border-gold/45 bg-charcoal/40 px-4 py-4 text-center">
-            {!highlightedEvent && (
+            {highlightedEvents.length === 0 && (
               <p className="text-sm text-gold/90">楽しみなイベントを登録すると、ここに残り日数を表示します。</p>
             )}
 
-            {highlightedEvent && (
-              <p className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
-                {highlightedEvent.daysUntil === 0
-                  ? `${highlightedEvent.title} 当日！！`
-                  : `${highlightedEvent.title} まであと${highlightedEvent.daysUntil}日！`}
-              </p>
+            {highlightedEvents.length > 0 && (
+              <div className="space-y-1.5">
+                {highlightedEvents.map((highlightedEvent) => (
+                  <p key={highlightedEvent.id} className="text-base font-semibold tracking-[0.02em] text-gold sm:text-lg">
+                    {highlightedEvent.daysUntil === 0
+                      ? `${highlightedEvent.title} 当日！！${getEventPeriodLabel(highlightedEvent.startDate, highlightedEvent.endDate)}`
+                      : `${highlightedEvent.title} まであと${highlightedEvent.daysUntil}日！${getEventPeriodLabel(highlightedEvent.startDate, highlightedEvent.endDate)}`}
+                  </p>
+                ))}
+              </div>
             )}
           </div>
         </Link>

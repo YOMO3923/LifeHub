@@ -54,16 +54,43 @@ const ICON_MAP: Record<EventIconKey, React.ComponentType<{ className?: string }>
 
 const DEFAULT_DRAFT: EventCountdownDraft = {
   title: '',
-  date: '',
+  startDate: '',
+  endDate: '',
   iconKey: 'sparkles',
 }
 
+const DATE_FORMATTER = new Intl.DateTimeFormat('ja-JP', {
+  month: 'long',
+  day: 'numeric',
+  weekday: 'short',
+})
+
 const formatEventDate = (dateString: string) => {
-  return new Intl.DateTimeFormat('ja-JP', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date(`${dateString}T00:00:00`))
+  return DATE_FORMATTER.format(new Date(`${dateString}T00:00:00`))
+}
+
+const formatEventPeriod = (startDate: string, endDate: string) => {
+  if (startDate === endDate) {
+    return formatEventDate(startDate)
+  }
+
+  return `${formatEventDate(startDate)} 〜 ${formatEventDate(endDate)}`
+}
+
+const getDisplayDate = (eventItem: UpcomingEventCountdownItem) => {
+  if (eventItem.daysUntil === 0) {
+    return formatEventPeriod(eventItem.startDate, eventItem.endDate)
+  }
+
+  return formatEventDate(eventItem.startDate)
+}
+
+const getLeadLabel = (eventItem: UpcomingEventCountdownItem) => {
+  if (eventItem.daysUntil === 0) {
+    return '開催中のイベント'
+  }
+
+  return '次に楽しみなイベント'
 }
 
 const getCountdownLabel = (eventItem: UpcomingEventCountdownItem) => {
@@ -76,6 +103,7 @@ const getCountdownLabel = (eventItem: UpcomingEventCountdownItem) => {
 
 export const EventCountdownPanel = () => {
   const {
+    highlightedEvents,
     highlightedEvent,
     eventItems,
     upcomingEventItems,
@@ -105,7 +133,8 @@ export const EventCountdownPanel = () => {
     if (!editingEventId) {
       const isCreated = await createEventItem({
         title: draft.title,
-        date: draft.date,
+        startDate: draft.startDate,
+        endDate: draft.endDate,
         iconKey: draft.iconKey,
       })
 
@@ -119,7 +148,8 @@ export const EventCountdownPanel = () => {
 
     const isUpdated = await updateEventItem(editingEventId, {
       title: draft.title,
-      date: draft.date,
+      startDate: draft.startDate,
+      endDate: draft.endDate,
       iconKey: draft.iconKey,
     })
 
@@ -134,7 +164,8 @@ export const EventCountdownPanel = () => {
   const handleStartEditing = (eventItem: EventCountdownItem) => {
     setDraft({
       title: eventItem.title,
-      date: eventItem.date,
+      startDate: eventItem.startDate,
+      endDate: eventItem.endDate,
       iconKey: eventItem.iconKey,
     })
     setEditingEventId(eventItem.id)
@@ -187,24 +218,30 @@ export const EventCountdownPanel = () => {
         )}
 
         {highlightedEvent && (
-          <div className="flex min-h-[108px] flex-col items-center justify-center gap-2 text-center animate-in fade-in-0 zoom-in-95 duration-500">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-full border-[0.5px] border-gold bg-navy-gradient">
-              {React.createElement(ICON_MAP[highlightedEvent.iconKey], {
-                className: 'h-7 w-7 text-gold',
-              })}
-            </span>
-            <p className="text-xs text-gold/90">次に楽しみなイベント</p>
-            {highlightedEvent.daysUntil !== 0 && (
-              <p className="text-2xl font-semibold tracking-[0.02em] text-white sm:text-3xl">{highlightedEvent.title}</p>
-            )}
-            <p className="text-xs text-white/80">{formatEventDate(highlightedEvent.date)}</p>
+          <div className="flex min-h-[108px] flex-col items-center justify-center gap-3 text-center animate-in fade-in-0 zoom-in-95 duration-500">
+            <p className="text-xs text-gold/90">{getLeadLabel(highlightedEvent)}</p>
             {isLoading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold"></div>
                 <p className="text-sm text-gold/90">イベント情報を取得中...</p>
               </div>
             ) : (
-              <p className="text-base font-semibold text-gold sm:text-lg">{getCountdownLabel(highlightedEvent)}</p>
+              <div className="grid w-full gap-3">
+                {highlightedEvents.map((eventItem) => (
+                  <div key={eventItem.id} className="flex flex-col items-center gap-1">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-[0.5px] border-gold bg-navy-gradient">
+                      {React.createElement(ICON_MAP[eventItem.iconKey], {
+                        className: 'h-6 w-6 text-gold',
+                      })}
+                    </span>
+                    {eventItem.daysUntil !== 0 && (
+                      <p className="text-2xl font-semibold tracking-[0.02em] text-white sm:text-3xl">{eventItem.title}</p>
+                    )}
+                    <p className="text-xs text-white/80">{getDisplayDate(eventItem)}</p>
+                    <p className="text-base font-semibold text-gold sm:text-lg">{getCountdownLabel(eventItem)}</p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -225,12 +262,22 @@ export const EventCountdownPanel = () => {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5">
-            <span className="text-xs text-gold/90">日程</span>
+            <span className="text-xs text-gold/90">開始日</span>
             <input
               className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-base text-white outline-none focus:border-gold sm:text-sm"
               type="date"
-              value={draft.date}
-              onChange={(event) => handleChangeDraft('date', event.target.value)}
+              value={draft.startDate}
+              onChange={(event) => handleChangeDraft('startDate', event.target.value)}
+            />
+          </label>
+
+          <label className="grid gap-1.5">
+            <span className="text-xs text-gold/90">終了日</span>
+            <input
+              className="rounded-md border border-gold/70 bg-charcoal/60 px-3 py-2 text-base text-white outline-none focus:border-gold sm:text-sm"
+              type="date"
+              value={draft.endDate}
+              onChange={(event) => handleChangeDraft('endDate', event.target.value)}
             />
           </label>
 
@@ -304,7 +351,7 @@ export const EventCountdownPanel = () => {
                   <EventIcon className="h-4 w-4 text-gold" />
                   <div>
                     <p className="text-sm text-white">{eventItem.title}</p>
-                    <p className="text-[11px] text-white/70">{formatEventDate(eventItem.date)}</p>
+                    <p className="text-[11px] text-white/70">{formatEventPeriod(eventItem.startDate, eventItem.endDate)}</p>
                   </div>
                 </div>
 

@@ -7,20 +7,50 @@ const isEventIconKey = (value: string): value is EventIconKey => {
   return value === 'sparkles' || value === 'fireworks' || value === 'gift' || value === 'plane' || value === 'music'
 }
 
-const isEventCountdownItem = (value: unknown): value is EventCountdownItem => {
+const normalizeStoredEventCountdownItem = (value: unknown): EventCountdownItem | null => {
   if (!value || typeof value !== 'object') {
-    return false
+    return null
   }
 
-  const candidate = value as Partial<EventCountdownItem>
+  const candidate = value as Partial<EventCountdownItem> & {
+    date?: string
+  }
+
+  if (
+    typeof candidate.id !== 'string' ||
+    typeof candidate.title !== 'string' ||
+    typeof candidate.createdAt !== 'number' ||
+    typeof candidate.iconKey !== 'string' ||
+    !isEventIconKey(candidate.iconKey)
+  ) {
+    return null
+  }
+
+  // 旧データ（dateのみ保存）を読み込んだ場合は、開始日・終了日を同日に補完して互換維持します。
+  if (typeof candidate.date === 'string') {
+    return {
+      id: candidate.id,
+      title: candidate.title,
+      startDate: candidate.date,
+      endDate: candidate.date,
+      iconKey: candidate.iconKey,
+      createdAt: candidate.createdAt,
+    }
+  }
+
+  if (typeof candidate.startDate !== 'string' || typeof candidate.endDate !== 'string') {
+    return null
+  }
 
   return (
-    typeof candidate.id === 'string' &&
-    typeof candidate.title === 'string' &&
-    typeof candidate.date === 'string' &&
-    typeof candidate.createdAt === 'number' &&
-    typeof candidate.iconKey === 'string' &&
-    isEventIconKey(candidate.iconKey)
+    {
+      id: candidate.id,
+      title: candidate.title,
+      startDate: candidate.startDate,
+      endDate: candidate.endDate,
+      iconKey: candidate.iconKey,
+      createdAt: candidate.createdAt,
+    }
   )
 }
 
@@ -39,7 +69,9 @@ const readStoredItems = (): EventCountdownItem[] => {
       return []
     }
 
-    return parsedItems.filter((item) => isEventCountdownItem(item))
+    return parsedItems
+      .map((item) => normalizeStoredEventCountdownItem(item))
+      .filter((item): item is EventCountdownItem => item !== null)
   } catch {
     localStorage.removeItem(EVENT_COUNTDOWN_STORAGE_KEY)
     return []
@@ -54,14 +86,14 @@ const writeStoredItems = (items: EventCountdownItem[]) => {
 export const fetchEventCountdownItems = async (): Promise<EventCountdownItem[]> => {
   const storedItems = readStoredItems()
   const todayDateString = getTodayDateString()
-  const validItems = storedItems.filter((item) => item.date >= todayDateString)
+  const validItems = storedItems.filter((item) => item.endDate >= todayDateString)
 
   if (validItems.length !== storedItems.length) {
     // 期限切れイベントを自動削除し、次回表示時に古いデータが残らないようにします。
     writeStoredItems(validItems)
   }
 
-  return validItems.sort((firstItem, secondItem) => firstItem.date.localeCompare(secondItem.date))
+  return validItems.sort((firstItem, secondItem) => firstItem.startDate.localeCompare(secondItem.startDate))
 }
 
 export const createEventCountdownItem = async (
@@ -70,7 +102,8 @@ export const createEventCountdownItem = async (
   const newItem: EventCountdownItem = {
     id: crypto.randomUUID(),
     title: input.title,
-    date: input.date,
+    startDate: input.startDate,
+    endDate: input.endDate,
     iconKey: input.iconKey,
     createdAt: Date.now(),
   }
@@ -95,7 +128,8 @@ export const updateEventCountdownItem = async (
   const updatedItem: EventCountdownItem = {
     ...targetItem,
     title: input.title,
-    date: input.date,
+    startDate: input.startDate,
+    endDate: input.endDate,
     iconKey: input.iconKey,
   }
 
