@@ -209,7 +209,7 @@ export const PortalPage = () => {
                     <p className="mt-1.5 text-xs text-gold/90">
                       {weatherDay.maxTemperature}° / {weatherDay.minTemperature}°
                     </p>
-                    <p className="mt-1 text-[10px] text-white/80">湿度 {weatherDay.humidity}% / 風速 {weatherDay.windSpeed}m/s</p>
+                    <p className="mt-1 text-[10px] text-white/80">降水確率 {weatherDay.precipitationProbability}% / 風速 {weatherDay.windSpeed}m/s</p>
 
                     {/* 洗濯判定アイコンと注意文を表示 */}
                     <div className="mt-2 flex flex-col items-center gap-1">

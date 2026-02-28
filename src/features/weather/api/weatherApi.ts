@@ -118,6 +118,8 @@ const buildLaundryJudgement = ({
 
   const severeWetCategories = new Set<WeatherCategory>(['thunderstorm', 'snow', 'snowShower', 'freezingRain', 'freezingDrizzle'])
   const wetCategories = new Set<WeatherCategory>(['drizzle', 'rain', 'rainShower'])
+  const rainyCategories = new Set<WeatherCategory>(['drizzle', 'freezingDrizzle', 'rain', 'freezingRain', 'rainShower'])
+  const shouldShowRainCaution = !rainyCategories.has(weatherCategory)
 
   // 1) まずは「濡れる・危険」系リスクを優先判定します。
   //    ここを先に評価することで、晴れ表示でも降水リスクが高い日は NG になります。
@@ -126,7 +128,7 @@ const buildLaundryJudgement = ({
       cautionReasons.push('雷雨に注意')
     } else if (weatherCategory === 'snow' || weatherCategory === 'snowShower') {
       cautionReasons.push('雪に注意')
-    } else {
+    } else if (shouldShowRainCaution) {
       cautionReasons.push('雨に注意')
     }
 
@@ -136,12 +138,14 @@ const buildLaundryJudgement = ({
 
     return {
       level: 'white',
-      caution: cautionReasons.join('・'),
+      caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
     }
   }
 
   if (wetCategories.has(weatherCategory) || hasModeratePrecipitationRisk) {
-    cautionReasons.push('雨に注意')
+    if (shouldShowRainCaution) {
+      cautionReasons.push('雨に注意')
+    }
 
     if (isStrongWind) {
       cautionReasons.push('風に注意')
@@ -149,7 +153,7 @@ const buildLaundryJudgement = ({
 
     return {
       level: 'white',
-      caution: cautionReasons.join('・'),
+      caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
     }
   }
 
