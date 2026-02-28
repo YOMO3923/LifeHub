@@ -8,6 +8,7 @@ import { WEATHER_LOCATION_OPTIONS, useWeather } from '@/features/weather'
 import { cn } from '@/lib/utils'
 import goldLaundryImg from '@/assets/sokkan.jpg'
 import normalLaundryImg from '@/assets/OK.jpg'
+import shinpaiLaundryImg from '@/assets/shinpai.jpg'
 import whiteLaundryImg from '@/assets/NG.jpg'
 
 type PortalFeature = {
@@ -43,6 +44,16 @@ const LAUNDRY_IMAGE_BY_LEVEL: Record<LaundryLevel, string> = {
   gold: goldLaundryImg,
   normal: normalLaundryImg,
   white: whiteLaundryImg,
+}
+
+const getLaundryImage = (laundry: { caution?: string; level: LaundryLevel }) => {
+  const isNeedShinpaiIcon = (laundry.level === 'gold' || laundry.level === 'normal') && Boolean(laundry.caution)
+
+  if (isNeedShinpaiIcon) {
+    return shinpaiLaundryImg
+  }
+
+  return LAUNDRY_IMAGE_BY_LEVEL[laundry.level]
 }
 
 const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat('ja-JP', {
@@ -181,7 +192,7 @@ export const PortalPage = () => {
 
             {!isLoading && !errorMessage &&
               weatherDays.map((weatherDay, weatherIndex) => {
-                const laundryImage = LAUNDRY_IMAGE_BY_LEVEL[weatherDay.laundry.level]
+                const laundryImage = getLaundryImage(weatherDay.laundry)
 
                 return (
                   <article
