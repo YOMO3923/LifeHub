@@ -124,6 +124,8 @@ type PeriodWeatherMetrics = {
 
 type DailyPeriodWeatherMetrics = {
   daytime: PeriodWeatherMetrics
+  daytimeRepresentativeWeatherCode: number | null
+  daytimeWeatherCodeCounts: Record<number, number>
   night: PeriodWeatherMetrics
 }
 
@@ -137,8 +139,31 @@ const createDefaultPeriodWeatherMetrics = (): PeriodWeatherMetrics => {
 const createDefaultDailyPeriodWeatherMetrics = (): DailyPeriodWeatherMetrics => {
   return {
     daytime: createDefaultPeriodWeatherMetrics(),
+    daytimeRepresentativeWeatherCode: null,
+    daytimeWeatherCodeCounts: {},
     night: createDefaultPeriodWeatherMetrics(),
   }
+}
+
+const WEATHER_CATEGORY_PRIORITY: Record<WeatherCategory, number> = {
+  thunderstorm: 110,
+  snow: 100,
+  snowShower: 95,
+  freezingRain: 90,
+  freezingDrizzle: 85,
+  rain: 80,
+  rainShower: 75,
+  drizzle: 70,
+  fog: 55,
+  cloudy: 40,
+  partlyCloudy: 30,
+  clear: 20,
+  unknown: 10,
+}
+
+const getWeatherCodePriority = (weatherCode: number) => {
+  const category = getWeatherCodeDetail(weatherCode).category
+  return WEATHER_CATEGORY_PRIORITY[category] ?? WEATHER_CATEGORY_PRIORITY.unknown
 }
 
 const getDateFromHourlyTime = (hourlyTime: string) => {
@@ -187,6 +212,31 @@ const buildDailyPeriodMetricsMap = (hourly: OpenMeteoForecastResponse['hourly'])
 
     targetPeriod.hasRain = targetPeriod.hasRain || hasRain
     targetPeriod.maxPrecipitationProbability = Math.max(targetPeriod.maxPrecipitationProbability, precipitationProbability)
+
+    if (isDaytimeHour(hour)) {
+      const currentCount = metricsByDate[date].daytimeWeatherCodeCounts[weatherCode] ?? 0
+      metricsByDate[date].daytimeWeatherCodeCounts[weatherCode] = currentCount + 1
+
+      const representativeCode = metricsByDate[date].daytimeRepresentativeWeatherCode
+
+      if (representativeCode === null) {
+        metricsByDate[date].daytimeRepresentativeWeatherCode = weatherCode
+      } else {
+        const representativeCount = metricsByDate[date].daytimeWeatherCodeCounts[representativeCode] ?? 0
+        const candidateCount = metricsByDate[date].daytimeWeatherCodeCounts[weatherCode]
+
+        if (candidateCount > representativeCount) {
+          metricsByDate[date].daytimeRepresentativeWeatherCode = weatherCode
+        } else if (candidateCount === representativeCount) {
+          const representativePriority = getWeatherCodePriority(representativeCode)
+          const candidatePriority = getWeatherCodePriority(weatherCode)
+
+          if (candidatePriority > representativePriority) {
+            metricsByDate[date].daytimeRepresentativeWeatherCode = weatherCode
+          }
+        }
+      }
+    }
   }
 
   return metricsByDate
@@ -217,8 +267,9 @@ const buildLaundryJudgement = ({
     daytimeMaxPrecipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
   const isClearLike = weatherCategory === 'clear' || weatherCategory === 'partlyCloudy'
 
-  // 日中に雨が降る可能性が高い日は、外干しで再度濡れる可能性が高いため非推奨にします。
-  if (daytimeHasRain || hasHighPrecipitationRisk) {
+  // 非推奨は「日中の降水リスクが高い」「荒天」のケースに限定します。
+  // 日中に短時間の雨が混じる程度なら、OK + 注意で返してアイコンとの乖離を減らします。
+  if (SEVERE_WET_CATEGORIES.has(weatherCategory) || hasHighPrecipitationRisk) {
     if (SEVERE_WET_CATEGORIES.has(weatherCategory)) {
       if (weatherCategory === 'thunderstorm') {
         cautionReasons.push('雷雨に注意')
@@ -227,7 +278,9 @@ const buildLaundryJudgement = ({
       } else {
         cautionReasons.push('雨に注意')
       }
-    } else {
+    }
+
+    if (hasHighPrecipitationRisk) {
       cautionReasons.push('雨に注意')
     }
 
@@ -272,6 +325,10 @@ const buildLaundryJudgement = ({
     cautionReasons.push('雨に注意')
   }
 
+  if (daytimeHasRain) {
+    cautionReasons.push('にわか雨に注意')
+  }
+
   if (isHighHumidity) {
     cautionReasons.push('湿気に注意')
   }
@@ -312,11 +369,12 @@ const toWeatherForecastDays = (forecastResponse: OpenMeteoForecastResponse): Wea
 
   return Array.from({ length: dailyLength }, (_, index) => {
     const date = daily.time[index]
-    const weatherCode = daily.weather_code[index]
+    const defaultWeatherCode = daily.weather_code[index]
+    const periodMetrics = periodMetricsByDate[date] ?? createDefaultDailyPeriodWeatherMetrics()
+    const weatherCode = periodMetrics.daytimeRepresentativeWeatherCode ?? defaultWeatherCode
     const weatherDetail = getWeatherCodeDetail(weatherCode)
     const humidity = daily.relative_humidity_2m_mean[index]
     const dailyMaxPrecipitationProbability = daily.precipitation_probability_max[index]
-    const periodMetrics = periodMetricsByDate[date] ?? createDefaultDailyPeriodWeatherMetrics()
     // APIから取得した風速はkm/h単位で返されます。
     // UI表示と洗濯判定はm/sで扱うため、ここでm/sに変換します。
     // 計算: km/h ÷ 3.6 = m/s

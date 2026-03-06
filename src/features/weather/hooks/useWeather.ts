@@ -5,6 +5,7 @@ import { DEFAULT_WEATHER_LOCATION_KEY } from '@/features/weather/types/weather'
 
 const WEATHER_CACHE_TTL_MS = 60 * 60 * 1000
 const WEATHER_CACHE_KEY_PREFIX = 'lifehub:weather-cache'
+const WEATHER_CACHE_SCHEMA_VERSION = 2
 
 type WeatherCachePayload = {
   fetchedAt: number
@@ -12,7 +13,7 @@ type WeatherCachePayload = {
 }
 
 const getWeatherCacheKey = (locationKey: WeatherLocationKey) => {
-  return `${WEATHER_CACHE_KEY_PREFIX}:${locationKey}`
+  return `${WEATHER_CACHE_KEY_PREFIX}:v${WEATHER_CACHE_SCHEMA_VERSION}:${locationKey}`
 }
 
 const readWeatherCache = (locationKey: WeatherLocationKey): WeatherForecastDay[] | null => {
