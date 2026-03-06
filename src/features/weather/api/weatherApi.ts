@@ -9,6 +9,8 @@ import { DEFAULT_WEATHER_LOCATION_KEY, WEATHER_FORECAST_DAYS } from '@/features/
 
 const OPEN_METEO_FORECAST_ENDPOINT = 'https://api.open-meteo.com/v1/forecast'
 const TOKYO_TIMEZONE = 'Asia/Tokyo'
+const DAYTIME_END_HOUR = 18
+const DAYTIME_START_HOUR = 6
 const GOLD_HUMIDITY_THRESHOLD = 65
 const GOLD_PRECIPITATION_PROBABILITY_THRESHOLD = 20
 const NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD = 30
@@ -16,6 +18,25 @@ const WHITE_PRECIPITATION_PROBABILITY_THRESHOLD = 60
 const HIGH_HUMIDITY_THRESHOLD = 80
 const STRONG_WIND_THRESHOLD = 8
 const VERY_STRONG_WIND_THRESHOLD = 11
+
+const SEVERE_WET_CATEGORIES = new Set<WeatherCategory>([
+  'thunderstorm',
+  'snow',
+  'snowShower',
+  'freezingRain',
+  'freezingDrizzle',
+])
+const WET_CATEGORIES = new Set<WeatherCategory>(['drizzle', 'rain', 'rainShower'])
+const RAINY_CATEGORIES = new Set<WeatherCategory>([
+  'drizzle',
+  'freezingDrizzle',
+  'rain',
+  'freezingRain',
+  'rainShower',
+  'snow',
+  'snowShower',
+  'thunderstorm',
+])
 
 type WeatherCategory =
   | 'clear'
@@ -96,14 +117,93 @@ const getWeatherCodeDetail = (weatherCode: number): WeatherCodeDetail => {
   }
 }
 
+type PeriodWeatherMetrics = {
+  hasRain: boolean
+  maxPrecipitationProbability: number
+}
+
+type DailyPeriodWeatherMetrics = {
+  daytime: PeriodWeatherMetrics
+  night: PeriodWeatherMetrics
+}
+
+const createDefaultPeriodWeatherMetrics = (): PeriodWeatherMetrics => {
+  return {
+    hasRain: false,
+    maxPrecipitationProbability: 0,
+  }
+}
+
+const createDefaultDailyPeriodWeatherMetrics = (): DailyPeriodWeatherMetrics => {
+  return {
+    daytime: createDefaultPeriodWeatherMetrics(),
+    night: createDefaultPeriodWeatherMetrics(),
+  }
+}
+
+const getDateFromHourlyTime = (hourlyTime: string) => {
+  return hourlyTime.split('T')[0]
+}
+
+const getHourFromHourlyTime = (hourlyTime: string) => {
+  const hourText = hourlyTime.split('T')[1]?.slice(0, 2)
+  const parsedHour = Number(hourText)
+
+  if (Number.isNaN(parsedHour)) {
+    return 0
+  }
+
+  return parsedHour
+}
+
+const isDaytimeHour = (hour: number) => {
+  return hour >= DAYTIME_START_HOUR && hour < DAYTIME_END_HOUR
+}
+
+const buildDailyPeriodMetricsMap = (hourly: OpenMeteoForecastResponse['hourly']) => {
+  const metricsByDate: Record<string, DailyPeriodWeatherMetrics> = {}
+
+  const hourlyLength = Math.min(
+    hourly.time.length,
+    hourly.weather_code.length,
+    hourly.precipitation_probability.length,
+    hourly.precipitation.length
+  )
+
+  for (let index = 0; index < hourlyLength; index += 1) {
+    const date = getDateFromHourlyTime(hourly.time[index])
+    const hour = getHourFromHourlyTime(hourly.time[index])
+    const weatherCode = hourly.weather_code[index]
+    const precipitationProbability = hourly.precipitation_probability[index]
+    const precipitation = hourly.precipitation[index]
+
+    if (!metricsByDate[date]) {
+      metricsByDate[date] = createDefaultDailyPeriodWeatherMetrics()
+    }
+
+    const targetPeriod = isDaytimeHour(hour) ? metricsByDate[date].daytime : metricsByDate[date].night
+    const weatherCategory = getWeatherCodeDetail(weatherCode).category
+    const hasRain = RAINY_CATEGORIES.has(weatherCategory) || precipitation > 0
+
+    targetPeriod.hasRain = targetPeriod.hasRain || hasRain
+    targetPeriod.maxPrecipitationProbability = Math.max(targetPeriod.maxPrecipitationProbability, precipitationProbability)
+  }
+
+  return metricsByDate
+}
+
 const buildLaundryJudgement = ({
+  daytimeHasRain,
+  daytimeMaxPrecipitationProbability,
   humidity,
-  precipitationProbability,
+  nightHasRain,
   weatherCategory,
   windSpeed,
 }: {
+  daytimeHasRain: boolean
+  daytimeMaxPrecipitationProbability: number
   humidity: number
-  precipitationProbability: number
+  nightHasRain: boolean
   weatherCategory: WeatherCategory
   windSpeed: number
 }): LaundryJudgement => {
@@ -112,23 +212,22 @@ const buildLaundryJudgement = ({
   const isStrongWind = windSpeed >= STRONG_WIND_THRESHOLD
   const isVeryStrongWind = windSpeed >= VERY_STRONG_WIND_THRESHOLD
   const isHighHumidity = humidity >= HIGH_HUMIDITY_THRESHOLD
-  const hasHighPrecipitationRisk = precipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD
-  const hasModeratePrecipitationRisk = precipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
+  const hasHighPrecipitationRisk = daytimeMaxPrecipitationProbability >= WHITE_PRECIPITATION_PROBABILITY_THRESHOLD
+  const hasModeratePrecipitationRisk =
+    daytimeMaxPrecipitationProbability >= NORMAL_CAUTION_PRECIPITATION_PROBABILITY_THRESHOLD
   const isClearLike = weatherCategory === 'clear' || weatherCategory === 'partlyCloudy'
 
-  const severeWetCategories = new Set<WeatherCategory>(['thunderstorm', 'snow', 'snowShower', 'freezingRain', 'freezingDrizzle'])
-  const wetCategories = new Set<WeatherCategory>(['drizzle', 'rain', 'rainShower'])
-  const rainyCategories = new Set<WeatherCategory>(['drizzle', 'freezingDrizzle', 'rain', 'freezingRain', 'rainShower'])
-  const shouldShowRainCaution = !rainyCategories.has(weatherCategory)
-
-  // 1) まずは「濡れる・危険」系リスクを優先判定します。
-  //    ここを先に評価することで、晴れ表示でも降水リスクが高い日は NG になります。
-  if (severeWetCategories.has(weatherCategory) || hasHighPrecipitationRisk) {
-    if (weatherCategory === 'thunderstorm') {
-      cautionReasons.push('雷雨に注意')
-    } else if (weatherCategory === 'snow' || weatherCategory === 'snowShower') {
-      cautionReasons.push('雪に注意')
-    } else if (shouldShowRainCaution) {
+  // 日中に雨が降る可能性が高い日は、外干しで再度濡れる可能性が高いため非推奨にします。
+  if (daytimeHasRain || hasHighPrecipitationRisk) {
+    if (SEVERE_WET_CATEGORIES.has(weatherCategory)) {
+      if (weatherCategory === 'thunderstorm') {
+        cautionReasons.push('雷雨に注意')
+      } else if (weatherCategory === 'snow' || weatherCategory === 'snowShower') {
+        cautionReasons.push('雪に注意')
+      } else {
+        cautionReasons.push('雨に注意')
+      }
+    } else {
       cautionReasons.push('雨に注意')
     }
 
@@ -138,31 +237,16 @@ const buildLaundryJudgement = ({
 
     return {
       level: 'white',
-      caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
+      caution: cautionReasons.join('・'),
     }
   }
 
-  if (wetCategories.has(weatherCategory) || hasModeratePrecipitationRisk) {
-    if (shouldShowRainCaution) {
-      cautionReasons.push('雨に注意')
-    }
-
-    if (isStrongWind) {
-      cautionReasons.push('風に注意')
-    }
-
-    return {
-      level: 'white',
-      caution: cautionReasons.length > 0 ? cautionReasons.join('・') : undefined,
-    }
-  }
-
-  // 2) 降水リスクが低い場合にのみ「乾きやすさ」を評価します。
-  //    晴れ寄り・湿度低め・降水確率低め・風が極端に強くない、の4条件で Gold にします。
+  // 乾きやすさと雨リスクの両方を満たし、夜間の雨もない場合のみ Gold にします。
   if (
     isClearLike &&
     humidity < GOLD_HUMIDITY_THRESHOLD &&
-    precipitationProbability < GOLD_PRECIPITATION_PROBABILITY_THRESHOLD &&
+    daytimeMaxPrecipitationProbability < GOLD_PRECIPITATION_PROBABILITY_THRESHOLD &&
+    !nightHasRain &&
     !isVeryStrongWind
   ) {
     if (isStrongWind) {
@@ -175,14 +259,25 @@ const buildLaundryJudgement = ({
     }
   }
 
-  // 3) それ以外は通常判定。
-  //    ただし、乾きにくさの要因（湿度・風）は注意文として明示します。
-  if (isHighHumidity) {
-    cautionReasons.push('湿気に注意')
+  // 夜間のみ雨のケースは、日中は干せるためOKにしつつ注意を残します。
+  if (nightHasRain) {
+    cautionReasons.push('早朝/夜の雨に注意')
   }
 
   if (isStrongWind) {
     cautionReasons.push('風に注意')
+  }
+
+  if (hasModeratePrecipitationRisk && !daytimeHasRain) {
+    cautionReasons.push('雨に注意')
+  }
+
+  if (isHighHumidity) {
+    cautionReasons.push('湿気に注意')
+  }
+
+  if (WET_CATEGORIES.has(weatherCategory) && !daytimeHasRain) {
+    cautionReasons.push('にわか雨に注意')
   }
 
   return {
@@ -200,7 +295,10 @@ const toDateLabel = (date: string) => {
   }).format(parsedDate)
 }
 
-const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): WeatherForecastDay[] => {
+const toWeatherForecastDays = (forecastResponse: OpenMeteoForecastResponse): WeatherForecastDay[] => {
+  const { daily, hourly } = forecastResponse
+  const periodMetricsByDate = buildDailyPeriodMetricsMap(hourly)
+
   const dailyLength = Math.min(
     daily.time.length,
     daily.precipitation_probability_max.length,
@@ -213,10 +311,12 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
   )
 
   return Array.from({ length: dailyLength }, (_, index) => {
+    const date = daily.time[index]
     const weatherCode = daily.weather_code[index]
     const weatherDetail = getWeatherCodeDetail(weatherCode)
     const humidity = daily.relative_humidity_2m_mean[index]
-    const precipitationProbability = daily.precipitation_probability_max[index]
+    const dailyMaxPrecipitationProbability = daily.precipitation_probability_max[index]
+    const periodMetrics = periodMetricsByDate[date] ?? createDefaultDailyPeriodWeatherMetrics()
     // APIから取得した風速はkm/h単位で返されます。
     // UI表示と洗濯判定はm/sで扱うため、ここでm/sに変換します。
     // 計算: km/h ÷ 3.6 = m/s
@@ -225,22 +325,24 @@ const toWeatherForecastDays = (daily: OpenMeteoForecastResponse['daily']): Weath
     const roundedWindSpeedMs = Math.round(windSpeedMs)
 
     return {
-      date: daily.time[index],
-      dateLabel: toDateLabel(daily.time[index]),
+      date,
+      dateLabel: toDateLabel(date),
       isToday: index === 0,
       weatherCode,
       weatherEmoji: weatherDetail.emoji,
       weatherLabel: weatherDetail.label,
       maxTemperature: Math.round(daily.temperature_2m_max[index]),
       minTemperature: Math.round(daily.temperature_2m_min[index]),
-      precipitationProbability: Math.round(daily.precipitation_probability_max[index]),
+      precipitationProbability: Math.round(dailyMaxPrecipitationProbability),
       windSpeed: roundedWindSpeedMs,
       humidity: Math.round(humidity),
       // UI表示値と判定値のズレを防ぐため、風速は丸め後のm/sで判定します。
       // 例: 表示が 8m/s なら、必ず「8m/s相当」の判定になります。
       laundry: buildLaundryJudgement({
+        daytimeHasRain: periodMetrics.daytime.hasRain,
+        daytimeMaxPrecipitationProbability: periodMetrics.daytime.maxPrecipitationProbability,
         humidity,
-        precipitationProbability,
+        nightHasRain: periodMetrics.night.hasRain,
         weatherCategory: weatherDetail.category,
         windSpeed: roundedWindSpeedMs,
       }),
@@ -264,6 +366,7 @@ export const fetchWeeklyWeather = async (
     forecast_days: String(WEATHER_FORECAST_DAYS),
     daily:
       'temperature_2m_max,temperature_2m_min,weather_code,wind_speed_10m_max,relative_humidity_2m_mean,precipitation_probability_max',
+    hourly: 'weather_code,precipitation_probability,precipitation',
   })
 
   const response = await fetch(`${OPEN_METEO_FORECAST_ENDPOINT}?${searchParams.toString()}`)
@@ -274,9 +377,9 @@ export const fetchWeeklyWeather = async (
 
   const data = (await response.json()) as OpenMeteoForecastResponse
 
-  if (!data.daily) {
+  if (!data.daily || !data.hourly) {
     throw new Error('天気データの形式が不正です。')
   }
 
-  return toWeatherForecastDays(data.daily)
+  return toWeatherForecastDays(data)
 }

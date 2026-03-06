@@ -42,6 +42,14 @@ export type OpenMeteoDailyResponse = {
   relative_humidity_2m_mean: number[]
 }
 
+export type OpenMeteoHourlyResponse = {
+  precipitation: number[]
+  precipitation_probability: number[]
+  time: string[]
+  weather_code: number[]
+}
+
 export type OpenMeteoForecastResponse = {
   daily: OpenMeteoDailyResponse
+  hourly: OpenMeteoHourlyResponse
 }

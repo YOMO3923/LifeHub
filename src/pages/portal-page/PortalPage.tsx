@@ -6,10 +6,10 @@ import { useEventCountdown } from '@/features/event-countdown'
 import type { LaundryLevel, WeatherLocationKey } from '@/features/weather'
 import { WEATHER_LOCATION_OPTIONS, useWeather } from '@/features/weather'
 import { cn } from '@/lib/utils'
-import goldLaundryImg from '@/assets/sokkan.jpg'
-import normalLaundryImg from '@/assets/OK.jpg'
-import shinpaiLaundryImg from '@/assets/shinpai.jpg'
-import whiteLaundryImg from '@/assets/NG.jpg'
+import goldLaundryImg from '@/assets/sokkan.webp'
+import normalLaundryImg from '@/assets/OK.webp'
+import shinpaiLaundryImg from '@/assets/shinpai.webp'
+import whiteLaundryImg from '@/assets/NG.webp'
 
 type PortalFeature = {
   icon: React.ComponentType<{ className?: string }>
