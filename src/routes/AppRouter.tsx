@@ -1,7 +1,9 @@
 import { createBrowserRouter, createHashRouter } from 'react-router-dom'
 import { CookingSupportPage } from '@/pages/cooking-support-page/CookingSupportPage'
+import { ExpenseManagerPage } from '@/pages/expense-manager-page/ExpenseManagerPage'
 import { EventCountdownPage } from '@/pages/event-countdown-page/EventCountdownPage'
 import { HouseworkTaskPage } from '@/pages/housework-task-page/HouseworkTaskPage'
+import { MemoPage } from '@/pages/memo-page/MemoPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
 import { OneLineDiaryPage } from '@/pages/one-line-diary-page/OneLineDiaryPage'
 import { PortalPage } from '@/pages/portal-page/PortalPage'
@@ -42,6 +44,14 @@ export const appRouter = createRouter(
         {
           path: 'event-countdown',
           element: <EventCountdownPage />,
+        },
+        {
+          path: 'expense-manager',
+          element: <ExpenseManagerPage />,
+        },
+        {
+          path: 'memo',
+          element: <MemoPage />,
         },
         {
           // どのルートにも一致しない場合は 404 画面を表示します。

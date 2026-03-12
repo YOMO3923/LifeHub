@@ -1,4 +1,4 @@
-import { BookOpenText, CalendarClock, ClipboardList, CloudSun, Plane, RefreshCw, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { BookOpenText, CalendarClock, ClipboardList, CloudSun, NotebookPen, Plane, RefreshCw, Sparkles, UtensilsCrossed, Wallet } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AppHeader } from '@/components/common/AppHeader'
 import { Button } from '@/components/ui'
@@ -37,6 +37,16 @@ const PORTAL_FEATURES: PortalFeature[] = [
     title: 'Cooking Support',
     icon: UtensilsCrossed,
     to: '/cooking-support',
+  },
+  {
+    title: 'Expense Manager',
+    icon: Wallet,
+    to: '/expense-manager',
+  },
+  {
+    title: 'Memo',
+    icon: NotebookPen,
+    to: '/memo',
   },
 ]
 
@@ -213,8 +223,8 @@ export const PortalPage = () => {
 
                     {/* 洗濯判定アイコンと注意文を表示 */}
                     <div className="mt-2 flex flex-col items-center gap-1">
-                      <img 
-                        src={laundryImage} 
+                      <img
+                        src={laundryImage}
                         alt={`洗濯判定: ${weatherDay.laundry.level}`}
                         className="h-12 w-12 object-contain"
                       />
